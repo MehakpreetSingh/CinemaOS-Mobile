@@ -159,6 +159,7 @@ actual object PluginRepository {
             _uiState.value = PluginsUiState(
                 pluginsEnabled = _uiState.value.pluginsEnabled,
                 groupStreamsByRepository = _uiState.value.groupStreamsByRepository,
+                defaultReposSeeded = _uiState.value.defaultReposSeeded,
                 repositories = nextRepos,
                 scrapers = nextScrapers,
             )
@@ -593,9 +594,28 @@ actual object PluginRepository {
 
         currentProfileId = profileId
         val loadedState = loadStateAsUiState(profileId)
-        _uiState.value = loadedState.state
+        _uiState.value = seedDefaultRepository(loadedState.state)
         initialized = true
-        if (loadedState.requiresMigration) persist()
+        if (loadedState.requiresMigration || !loadedState.state.defaultReposSeeded) persist()
+    }
+
+    /**
+     * Installs the CinemaOS anime scraper repository once per profile (the repository is fetched by the normal
+     * refresh that follows initialization). A repository the user removed later is not added back.
+     */
+    private fun seedDefaultRepository(state: PluginsUiState): PluginsUiState {
+        if (state.defaultReposSeeded) return state
+        val alreadyInstalled = state.repositories.any { it.manifestUrl == CINEMAOS_DEFAULT_PLUGIN_MANIFEST_URL }
+        val repositories = if (alreadyInstalled) {
+            state.repositories
+        } else {
+            state.repositories + PluginRepositoryItem(
+                manifestUrl = CINEMAOS_DEFAULT_PLUGIN_MANIFEST_URL,
+                name = "CinemaOS Sources",
+                isRefreshing = true,
+            )
+        }
+        return state.copy(repositories = repositories, defaultReposSeeded = true)
     }
 
     private fun loadStateAsUiState(profileId: Int): LoadedPluginState {
@@ -614,6 +634,7 @@ actual object PluginRepository {
             state = PluginsUiState(
                 pluginsEnabled = stored?.pluginsEnabled ?: true,
                 groupStreamsByRepository = stored?.groupStreamsByRepository ?: false,
+                defaultReposSeeded = stored?.defaultReposSeeded ?: false,
                 repositories = stored?.repositories
                     ?.map {
                         PluginRepositoryItem(

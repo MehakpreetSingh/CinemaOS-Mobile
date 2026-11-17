@@ -3,6 +3,10 @@ package com.nuvio.app.features.plugins
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** CinemaOS anime scrapers (MegaPlay, Anikoto, AnimeSalt, AnimeWorld, KickAssAnime), installed on first launch. */
+internal const val CINEMAOS_DEFAULT_PLUGIN_MANIFEST_URL =
+    "https://raw.githubusercontent.com/MehakpreetSingh/CinemaOS-TV-App/cinemaos/plugins/cinemaos/manifest.json"
+
 internal const val PLUGIN_REPOSITORY_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1_000L
 
 internal fun isPluginRepositoryRefreshDue(
@@ -100,6 +104,7 @@ data class PluginSubtitleResult(
 data class PluginsUiState(
     val pluginsEnabled: Boolean = true,
     val groupStreamsByRepository: Boolean = false,
+    val defaultReposSeeded: Boolean = false,
     val repositories: List<PluginRepositoryItem> = emptyList(),
     val scrapers: List<PluginScraper> = emptyList(),
 )
@@ -113,6 +118,7 @@ sealed interface AddPluginRepositoryResult {
 internal data class StoredPluginsState(
     val pluginsEnabled: Boolean = true,
     val groupStreamsByRepository: Boolean = false,
+    val defaultReposSeeded: Boolean = false,
     val repositories: List<StoredPluginRepository> = emptyList(),
     val scrapers: List<StoredPluginScraper> = emptyList(),
 )
@@ -154,6 +160,7 @@ internal fun PluginsUiState.toStoredPluginsState(): StoredPluginsState =
     StoredPluginsState(
         pluginsEnabled = pluginsEnabled,
         groupStreamsByRepository = groupStreamsByRepository,
+        defaultReposSeeded = defaultReposSeeded,
         repositories = repositories.map { repository ->
             StoredPluginRepository(
                 manifestUrl = repository.manifestUrl,
