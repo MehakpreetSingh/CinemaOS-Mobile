@@ -24,6 +24,7 @@ data class HomeCatalogDefinition(
     val supportsPagination: Boolean,
     val descriptorSignature: String,
     val serverConnectionId: String? = null,
+    val genre: String? = null,
 ) {
     val cacheKey: String
         get() = "$key|$descriptorSignature"
@@ -69,7 +70,48 @@ fun buildHomeCatalogDefinitions(addons: List<ManagedAddon>): List<HomeCatalogDef
                     descriptorSignature = buildHomeCatalogDescriptorSignature(addon, manifest, catalog),
                 )
             }
-    }.distinctBy(HomeCatalogDefinition::key) + ServerCatalog.homeDefinitions()
+    }.distinctBy(HomeCatalogDefinition::key) + buildCinemetaExtraDefinitions(addons) + ServerCatalog.homeDefinitions()
+
+private const val CINEMETA_MANIFEST_ID = "com.linvo.cinemeta"
+
+private val CINEMETA_HOME_GENRES = listOf("Action", "Comedy", "Horror", "Sci-Fi", "Animation", "Documentary", "Thriller", "Romance")
+
+/**
+ * Extra Home rows built from the genre and year extras of the Cinemeta addon (Cinemeta ids: top, imdbRating, year).
+ * They are derived from the installed manifest at runtime, so existing installs get them without migration.
+ */
+private fun buildCinemetaExtraDefinitions(addons: List<ManagedAddon>): List<HomeCatalogDefinition> =
+    addons.enabledAddons().flatMap { addon ->
+        val manifest = addon.manifest ?: return@flatMap emptyList()
+        if (manifest.id != CINEMETA_MANIFEST_ID) return@flatMap emptyList()
+        val rows = mutableListOf<HomeCatalogDefinition>()
+        fun add(catalog: AddonCatalog, genre: String, title: String) {
+            val options = catalog.extra.firstOrNull { it.name == "genre" }?.options.orEmpty()
+            if (options.isNotEmpty() && genre !in options) return
+            rows += HomeCatalogDefinition(
+                key = "${manifest.id}:${catalog.type}:${catalog.id}:$genre",
+                defaultTitle = title,
+                catalogName = title,
+                addonName = addon.displayTitle,
+                manifestUrl = addon.manifestUrl,
+                type = catalog.type,
+                catalogId = catalog.id,
+                supportsPagination = catalog.supportsPagination(),
+                descriptorSignature = buildHomeCatalogDescriptorSignature(addon, manifest, catalog) + ":" + genre,
+                genre = genre,
+            )
+        }
+        val byKey = manifest.catalogs.associateBy { it.type + ":" + it.id }
+        byKey["movie:year"]?.let { add(it, "2026", "New Movies 2026") }
+        byKey["series:year"]?.let { add(it, "2026", "New Series 2026") }
+        byKey["movie:imdbRating"]?.let { add(it, "Drama", "Top Rated Drama Movies") }
+        byKey["series:imdbRating"]?.let { add(it, "Drama", "Top Rated Drama Series") }
+        CINEMETA_HOME_GENRES.forEach { genre ->
+            byKey["movie:top"]?.let { add(it, genre, "$genre Movies") }
+            byKey["series:top"]?.let { add(it, genre, "$genre Series") }
+        }
+        rows
+    }
 
 private fun buildHomeCatalogDescriptorSignature(
     addon: ManagedAddon,
