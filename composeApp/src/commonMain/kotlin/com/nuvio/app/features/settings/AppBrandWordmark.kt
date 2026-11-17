@@ -41,3 +41,7 @@ internal fun AppBrandWordmark(
         )
     }
 }
+
+/** Upstream preloads its logo bitmap; CinemaOS uses a text wordmark so this is a no-op. */
+@Composable
+internal fun PreloadAppBrandWordmark() = Unit
