@@ -105,6 +105,7 @@ internal actual fun FloatingNavigationBar(
                 .then(
                     if (hazeState != null) {
                         Modifier.hazeEffect(state = hazeState) {
+                            blurEnabled = true
                             blurRadius = 32.dp
                             backgroundColor = dockSurface
                             tints = listOf(HazeTint(dockSurface.copy(alpha = 0.28f)))
