@@ -66,7 +66,6 @@ internal fun CinemaosEpisodesPill(
         modifier = Modifier
             .defaultMinSize(minHeight = 48.dp, minWidth = 48.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = 0.10f))
             .clickable(role = Role.Button, onClick = onClick)
             .padding(start = if (showLabel) 12.dp else 10.dp, end = if (showLabel) 14.dp else 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
