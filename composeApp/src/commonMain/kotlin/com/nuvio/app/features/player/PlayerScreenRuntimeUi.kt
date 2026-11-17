@@ -368,6 +368,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
     val partyState by PartyRepository.state.collectAsStateWithLifecycle()
     val partyActive = partyState.party != null
     val playerBadges = rememberPlayerBadges()
+    val awaitingFirstFrame = activeSourceUrl.isNotBlank() && !initialLoadCompleted && errorMessage == null
     LaunchedEffect(folded) {
         if (folded) {
             controlsVisible = true
@@ -375,7 +376,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
         }
     }
     AnimatedVisibility(
-        visible = (controlsVisible || folded || showParentalGuide) && !playerControlsLocked && !isInPip &&
+        visible = (controlsVisible || folded || showParentalGuide || awaitingFirstFrame) && !playerControlsLocked && !isInPip &&
             !(folded && isPanelOpen),
         enter = fadeIn(),
         exit = fadeOut(),
@@ -404,7 +405,11 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
                 }
             } else null,
             onInteraction = { controlsActivityTick += 1 },
-            showPlaybackControls = controlsVisible,
+            showPlaybackControls = controlsVisible || awaitingFirstFrame,
+            awaitingFirstFrame = awaitingFirstFrame,
+            loadingMessage = if (sourceFallbackAttempts > 0 && !initialLoadCompleted) {
+                stringResource(Res.string.player_loading_trying_next_source, sourceFallbackAttempts)
+            } else null,
             onLockToggle = {
                 if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
             },
@@ -558,7 +563,8 @@ private fun BoxScope.RenderPlaybackOverlays(
         metrics = metrics,
         horizontalSafePadding = horizontalSafePadding,
         onUnlock = { unlockPlayerControls() },
-        showOpeningOverlay = playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null,
+        showOpeningOverlay = playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null &&
+            (activeSourceUrl.isBlank() || isP2pPlaybackActive),
         backdropArtwork = background ?: poster,
         logo = logo,
         title = title,

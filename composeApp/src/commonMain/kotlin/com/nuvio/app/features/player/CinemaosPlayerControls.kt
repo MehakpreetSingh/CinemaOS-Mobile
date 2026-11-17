@@ -63,6 +63,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -116,6 +117,8 @@ internal fun CinemaosPlayerControls(
     isLocked: Boolean,
     chapters: List<PlayerChapter>,
     showPlaybackControls: Boolean,
+    awaitingFirstFrame: Boolean = false,
+    loadingMessage: String? = null,
     horizontalSafePadding: Dp,
     onInteraction: () -> Unit,
     onBack: () -> Unit,
@@ -303,6 +306,18 @@ internal fun CinemaosPlayerControls(
                 modifier = Modifier.align(Alignment.TopStart),
             )
 
+            if (!loadingMessage.isNullOrBlank() && (awaitingFirstFrame || playbackSnapshot.isLoading)) {
+                Text(
+                    text = loadingMessage,
+                    style = typeScale.bodyMd,
+                    color = foreground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 120.dp, start = 24.dp, end = 24.dp),
+                )
+            }
+
             if (showPlaybackControls) {
                 // Center: seek back, a larger play and pause, seek forward.
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -323,18 +338,28 @@ internal fun CinemaosPlayerControls(
                             iconSize = seekIconSize,
                             tint = foreground,
                         )
-                        CinemaosCenterButton(
-                            description = stringResource(
-                                if (playbackSnapshot.isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play,
-                            ),
-                            onClick = { onInteraction(); onTogglePlayback() },
-                            buttonSize = playIconSizeLarge + 20.dp,
-                            painter = appIconPainter(
-                                if (playbackSnapshot.isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay,
-                            ),
-                            iconSize = playIconSizeLarge,
-                            tint = foreground,
-                        )
+                        if (awaitingFirstFrame || playbackSnapshot.isLoading) {
+                            Column(
+                                modifier = Modifier.size(playIconSizeLarge + 20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                NuvioLoadingIndicator(modifier = Modifier.size(playIconSizeLarge))
+                            }
+                        } else {
+                            CinemaosCenterButton(
+                                description = stringResource(
+                                    if (playbackSnapshot.isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play,
+                                ),
+                                onClick = { onInteraction(); onTogglePlayback() },
+                                buttonSize = playIconSizeLarge + 20.dp,
+                                painter = appIconPainter(
+                                    if (playbackSnapshot.isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay,
+                                ),
+                                iconSize = playIconSizeLarge,
+                                tint = foreground,
+                            )
+                        }
                         CinemaosCenterButton(
                             description = stringResource(Res.string.compose_player_seek_forward_10),
                             onClick = { onInteraction(); onSeekForward() },

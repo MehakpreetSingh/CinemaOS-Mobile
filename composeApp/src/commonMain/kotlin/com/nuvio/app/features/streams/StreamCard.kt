@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.SkeletonBlock
 import com.nuvio.app.features.debrid.DebridProviders
+import com.nuvio.app.features.player.StreamInfoChipRow
+import com.nuvio.app.features.player.parsedInfo
 
 internal val LocalStreamHighlight = staticCompositionLocalOf<(StreamItem) -> String?> { { null } }
 
@@ -140,7 +142,8 @@ internal fun StreamCard(
                 }
             }
 
-            val subtitle = stream.streamSubtitle
+            val subtitleLines = stream.streamSubtitle.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
+            val subtitle = subtitleLines.firstOrNull()
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -152,6 +155,20 @@ internal fun StreamCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            if (subtitleLines.size > 1) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitleLines.drop(1).joinToString(" "),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.5.sp, lineHeight = 14.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            val parsedInfo = remember(stream) { stream.parsedInfo() }
+            Spacer(modifier = Modifier.height(6.dp))
+            StreamInfoChipRow(info = parsedInfo, modifier = Modifier.fillMaxWidth())
 
             if (hasBadges && badgePlacement == StreamBadgePlacement.BOTTOM) {
                 Spacer(modifier = Modifier.height(5.dp))

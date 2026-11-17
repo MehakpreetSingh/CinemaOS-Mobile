@@ -151,7 +151,11 @@ private fun PluginRuntimeResult.toStreamItem(
 
     return StreamItem(
         name = name ?: title,
-        description = subtitleParts.joinToString(" • ").ifBlank { null },
+        description = listOfNotNull(
+            subtitleParts.joinToString(" • ").ifBlank { null },
+            // The release name (title) carries HDR, codec and audio tags; it was dropped whenever name was set.
+            title.trim().takeIf { it.isNotBlank() && !it.equals(name?.trim(), ignoreCase = true) },
+        ).joinToString("\n").ifBlank { null },
         url = url,
         infoHash = infoHash,
         sourceName = sourceLabel,

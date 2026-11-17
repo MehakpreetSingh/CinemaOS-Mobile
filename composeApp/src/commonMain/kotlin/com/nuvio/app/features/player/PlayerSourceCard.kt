@@ -260,13 +260,25 @@ internal fun PlayerSourceCard(
                 )
             }
         }
-        stream.streamSubtitle?.takeIf { it.isNotBlank() }?.let { subtitle ->
+        val subtitleLines = stream.streamSubtitle.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
+        subtitleLines.firstOrNull()?.let { subtitle ->
             Text(
                 text = subtitle,
-                color = tokens.colors.textSecondary,
+                color = tokens.colors.textPrimary,
                 style = MaterialTheme.typography.bodySmall,
                 fontSize = 12.sp,
                 lineHeight = 17.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (subtitleLines.size > 1) {
+            Text(
+                text = subtitleLines.drop(1).joinToString(" "),
+                color = tokens.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+                fontSize = 10.5.sp,
+                lineHeight = 14.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
