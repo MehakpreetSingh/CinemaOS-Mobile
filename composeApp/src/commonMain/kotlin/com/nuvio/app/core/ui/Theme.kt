@@ -42,13 +42,21 @@ val MaterialTheme.appTheme: AppTheme
 private fun contentColorFor(background: Color): Color =
     if (background.luminance() > 0.5f) Color(0xFF111111) else Color(0xFFF5F7F8)
 
+/** Keeps the declared content color unless it would be unreadable on a light/dark container. */
+private fun readableOn(container: Color, declared: Color): Color =
+    if (kotlin.math.abs(container.luminance() - declared.luminance()) < 0.35f) {
+        if (container.luminance() > 0.5f) Color(0xFF111111) else Color.White
+    } else {
+        declared
+    }
+
 private fun buildColorScheme(palette: ThemeColorPalette, amoled: Boolean = false) = darkColorScheme(
     primary = palette.secondary,
-    onPrimary = palette.onSecondary,
+    onPrimary = readableOn(palette.secondary, palette.onSecondary),
     primaryContainer = palette.focusBackground,
     onPrimaryContainer = contentColorFor(palette.focusBackground),
     secondary = palette.secondaryVariant,
-    onSecondary = palette.onSecondaryVariant,
+    onSecondary = readableOn(palette.secondaryVariant, palette.onSecondaryVariant),
     background = if (amoled) Color.Black else palette.background,
     onBackground = Color(0xFFFAFAFA),
     surface = palette.backgroundElevated,

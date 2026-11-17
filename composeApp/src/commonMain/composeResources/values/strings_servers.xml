@@ -61,7 +61,7 @@
     <string name="servers_failure_incomplete">Still checking this server's library. Try again in a moment.</string>
     <string name="servers_failure_remote_playback">Plex only allows playback from this server away from its home network with Plex Pass or a Remote Watch Pass.</string>
     <string name="plex_add_description">Sign in with your Plex account.</string>
-    <string name="plex_sign_in_subtitle">Sign in on plex.tv. Your Plex password is never entered in Nuvio.</string>
+    <string name="plex_sign_in_subtitle">Sign in on plex.tv. Your Plex password is never entered in CinemaOS.</string>
     <string name="plex_continue">Continue with Plex</string>
     <string name="plex_browser_waiting">Finish signing in on plex.tv, then come back here.</string>
     <string name="plex_use_code">Sign in on another device</string>

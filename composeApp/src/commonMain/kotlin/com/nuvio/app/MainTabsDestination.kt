@@ -27,6 +27,7 @@ import com.nuvio.app.core.ui.LocalNuvioBottomNavigationOverlayPadding
 import com.nuvio.app.core.ui.LocalNuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioNavBarScrollState
 import com.nuvio.app.core.ui.NuvioClassicNavigationBar
+import com.nuvio.app.core.ui.DockIconKind
 import com.nuvio.app.core.ui.FloatingNavigationBar
 import com.nuvio.app.core.ui.FloatingNavigationItem
 import com.nuvio.app.core.ui.PlatformBackHandler
@@ -80,47 +81,39 @@ internal fun MainTabsDestination(
         val tabsRouteActive = rootRouteActive
         val navBarScrollState = rememberNuvioNavBarScrollState()
         val navBarHazeState = rememberHazeState()
-        val navBarStyleSetting by remember { ThemeSettingsRepository.navBarStyle }.collectAsStateWithLifecycle()
+        val savedNavBarStyle by remember { ThemeSettingsRepository.navBarStyle }.collectAsStateWithLifecycle()
+        val navBarStyleSetting = if (savedNavBarStyle == NavBarStyle.CLASSIC) NavBarStyle.EXPANDED else savedNavBarStyle
         val navBarGlowEnabled by ThemeSettingsRepository.navBarGlowEnabled.collectAsStateWithLifecycle()
         val floatingNavigationItems = listOf(
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Home,
                 onClick = { onTabSelected(AppScreenTab.Home) },
-                drawable = Res.drawable.dock_home,
+                morph = DockIconKind.Home,
                 label = stringResource(Res.string.compose_nav_home),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Search,
                 onClick = { onTabSelected(AppScreenTab.Search) },
-                drawable = Res.drawable.dock_search,
+                morph = DockIconKind.Search,
                 label = stringResource(Res.string.compose_nav_search),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Library,
                 onClick = { onTabSelected(AppScreenTab.Library) },
-                drawable = Res.drawable.dock_library,
+                morph = DockIconKind.Library,
                 label = stringResource(Res.string.compose_nav_library),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Anime,
                 onClick = { onTabSelected(AppScreenTab.Anime) },
-                drawable = Res.drawable.dock_anime,
+                morph = DockIconKind.Anime,
                 label = stringResource(Res.string.compose_nav_anime),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Settings,
                 onClick = { onTabSelected(AppScreenTab.Settings) },
+                morph = DockIconKind.Profile,
                 label = stringResource(Res.string.compose_nav_profile),
-                content = { onClick ->
-                    ProfileSwitcherTab(
-                        selected = selectedTab == AppScreenTab.Settings,
-                        onClick = onClick,
-                        onProfileSelected = onProfileSelected,
-                        onAddProfileRequested = onAddProfileRequested,
-                        hazeState = navBarHazeState,
-                        popupBelowAnchor = isTabletLayout,
-                    )
-                },
             ),
         )
 
@@ -174,7 +167,7 @@ internal fun MainTabsDestination(
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 CompositionLocalProvider(
-                    LocalNuvioBottomNavigationOverlayPadding provides if (useNativeBottomTabs) 49.dp else if (!isTabletLayout && navBarStyleSetting != NavBarStyle.CLASSIC) 72.dp else 0.dp,
+                    LocalNuvioBottomNavigationOverlayPadding provides if (useNativeBottomTabs) 49.dp else 72.dp,
                     LocalNuvioNavBarScrollState provides navBarScrollState,
                 ) {
                     AppTabHost(
@@ -184,36 +177,20 @@ internal fun MainTabsDestination(
                         actions = tabActions,
                         modifier = Modifier
                             .fillMaxSize()
-                            .then(if (isTabletLayout || navBarStyleSetting != NavBarStyle.CLASSIC) Modifier.hazeSource(state = navBarHazeState) else Modifier)
+                            .hazeSource(state = navBarHazeState)
                             .then(if (navBarStyleSetting == NavBarStyle.ADAPTIVE) Modifier.nestedScroll(navBarScrollState.nestedScrollConnection) else Modifier)
                             .padding(innerPadding),
                     )
                 }
 
-                if (isTabletLayout && !useNativeBottomTabs) {
-                    val tabletNavBarScrollState = remember { NuvioNavBarScrollState().apply { collapse() } }
-                    FloatingNavigationBar(
-                        modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 500.dp),
-                        scrollState = tabletNavBarScrollState,
-                        hazeState = navBarHazeState,
-                        contentPadding = PaddingValues(
-                            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 10.dp,
-                            bottom = 8.dp,
-                        ),
-                        compactSize = true,
-                        items = floatingNavigationItems,
-                        glowEnabled = navBarGlowEnabled,
-                    )
-                }
-
-                if (!isTabletLayout && !useNativeBottomTabs && navBarStyleSetting != NavBarStyle.CLASSIC) {
+                if (!useNativeBottomTabs) {
                     when (navBarStyleSetting) {
                         NavBarStyle.EXPANDED -> navBarScrollState.expand()
                         NavBarStyle.COMPACT -> navBarScrollState.collapse()
                         else -> {}
                     }
                     FloatingNavigationBar(
-                        modifier = Modifier.align(Alignment.BottomCenter),
+                        modifier = Modifier.align(Alignment.BottomCenter).widthIn(max = 500.dp),
                         scrollState = navBarScrollState,
                         hazeState = navBarHazeState,
                         items = floatingNavigationItems,

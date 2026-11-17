@@ -12,6 +12,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -19,7 +20,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import dev.chrisbanes.haze.hazeEffect
 import org.jetbrains.compose.resources.painterResource
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -103,10 +106,14 @@ internal actual fun FloatingNavigationBar(
                     },
                 )
                 .background(Color.Black.copy(alpha = if (hazeState != null) 0.62f else 0.92f))
-                .border(1.dp, Color.White.copy(alpha = 0.14f), capsule)
+                .border(
+                    1.dp,
+                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.06f))),
+                    capsule,
+                )
                 .padding(horizontal = 6.dp)
                 .selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEach { item ->
@@ -120,45 +127,49 @@ internal actual fun FloatingNavigationBar(
 private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
     val on = item.selected
     val tint by animateColorAsState(
-        targetValue = if (on) Color.Black else Color.White.copy(alpha = 0.58f),
+        targetValue = if (on) Color.Black else Color.White.copy(alpha = 0.62f),
         label = "dock_tint",
     )
     val bg by animateColorAsState(
         targetValue = if (on) Color.White else Color.Transparent,
         label = "dock_bg",
     )
+    val morph by animateFloatAsState(
+        targetValue = if (on) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessMediumLow),
+        label = "dock_morph",
+    )
     val slotHeight = if (compactSize) 40.dp else 46.dp
-    val iconSize = if (compactSize) 20.dp else 22.dp
+    val iconSize = if (compactSize) 22.dp else 24.dp
     val shape = RoundedCornerShape(50)
     Row(
         modifier = Modifier
             .animateContentSize()
             .height(slotHeight)
             .widthIn(min = 44.dp)
-            .clip(shape)
-            .background(bg, shape)
             .then(
-                if (item.content == null) {
-                    Modifier.selectable(
-                        selected = on,
-                        role = Role.Tab,
-                        onClick = item.onClick,
-                    )
+                if (on) {
+                    Modifier.shadow(10.dp, shape, clip = false, ambientColor = Color.White, spotColor = Color.White)
                 } else {
                     Modifier
                 },
             )
-            .padding(horizontal = if (on) 14.dp else 10.dp),
+            .clip(shape)
+            .background(bg, shape)
+            .selectable(
+                selected = on,
+                role = Role.Tab,
+                onClick = item.onClick,
+            )
+            .padding(horizontal = if (on) 13.dp else 10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val content = item.content
+        val kind = item.morph
         when {
-            content != null -> Box(Modifier.size(iconSize + 4.dp), contentAlignment = Alignment.Center) {
-                content(item.onClick)
-            }
-            item.icon != null -> Icon(item.icon, item.label, Modifier.size(iconSize), tint = tint)
+            kind != null -> DockMorphIcon(kind, morph, tint, Modifier.size(iconSize))
             item.drawable != null -> Icon(painterResource(item.drawable), item.label, Modifier.size(iconSize), tint = tint)
+            item.icon != null -> Icon(item.icon, item.label, Modifier.size(iconSize), tint = tint)
         }
         if (on) {
             Text(
@@ -168,8 +179,8 @@ private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.2.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 64.dp),
+                overflow = TextOverflow.Clip,
+                softWrap = false,
             )
         }
     }

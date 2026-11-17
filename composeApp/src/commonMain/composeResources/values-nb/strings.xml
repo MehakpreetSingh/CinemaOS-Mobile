@@ -493,7 +493,7 @@
     <string name="community_tab_supporters">Støttespillere</string>
     <string name="community_total_commits">%1$d totale commits</string>
     <string name="community_view_supporter_membership">Vis Supporter-medlemskap</string>
-    <string name="compose_about_made_with">Laget med ❤️ av Tapframe og venner</string>
+    <string name="compose_about_made_with">Laget med ❤️ av CinemaOS og venner</string>
     <string name="compose_about_version_format">Versjon %1$s (%2$s)</string>
     <string name="compose_action_off">Av</string>
     <string name="compose_action_on">På</string>
@@ -1036,8 +1036,8 @@
 • IP-adressen din vil være synlig for andre peers i nettverket
 • Du er alene ansvarlig for innholdet du åpner
 • Du bekrefter at du har lovlig rett til å strømme dette innholdet i din jurisdiksjon
-• Nuvio hoster, distribuerer eller kontrollerer ikke noe P2P-innhold
-• Nuvio har intet ansvar for juridiske konsekvenser som følger av din bruk av P2P-strømming
+• CinemaOS hoster, distribuerer eller kontrollerer ikke noe P2P-innhold
+• CinemaOS har intet ansvar for juridiske konsekvenser som følger av din bruk av P2P-strømming
 
 Du bruker denne funksjonen helt på eget ansvar. P2P kan deaktiveres når som helst i Innstillinger.</string>
     <string name="p2p_consent_cancel">Avbryt</string>

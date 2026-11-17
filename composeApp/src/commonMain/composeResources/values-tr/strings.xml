@@ -309,7 +309,7 @@
     <string name="collections_pinned">Sabitlendi</string>
     <string name="collections_tab_all">Tümü</string>
     <string name="collections_your_collections">Koleksiyonların</string>
-    <string name="compose_about_made_with">Tapframe ve arkadaşları tarafından ❤️ ile yapıldı</string>
+    <string name="compose_about_made_with">CinemaOS ve arkadaşları tarafından ❤️ ile yapıldı</string>
     <string name="compose_about_version_format">Sürüm %1$s (%2$s)</string>
     <string name="compose_action_off">Kapalı</string>
     <string name="compose_action_on">Açık</string>
@@ -2109,8 +2109,8 @@
 • IP adresiniz ağdaki diğer eşler tarafından görülebilir olacaktır
 • Eriştiğiniz içerikten yalnızca siz sorumlusunuz
 • Bulunduğunuz bölgede bu içeriği yayınlama/izleme konusunda yasal hakka sahip olduğunuzu onaylarsınız
-• Nuvio hiçbir P2P içeriğini barındırmaz, dağıtmaz veya denetlemez
-• Nuvio, P2P yayıncılığını kullanımınızdan doğabilecek hiçbir yasal sorumluluğu taşımaz
+• CinemaOS hiçbir P2P içeriğini barındırmaz, dağıtmaz veya denetlemez
+• CinemaOS, P2P yayıncılığını kullanımınızdan doğabilecek hiçbir yasal sorumluluğu taşımaz
 
 Bu özelliği tamamen kendi sorumluluğunuzda kullanırsınız. P2P istediğiniz zaman Ayarlar'dan devre dışı bırakılabilir.</string>
     <string name="p2p_consent_enable">P2P'yi Etkinleştir</string>

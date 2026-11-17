@@ -301,7 +301,7 @@
     <string name="collections_pinned">Pripnuté</string>
     <string name="collections_tab_all">Všetky</string>
     <string name="collections_your_collections">Vaše kolekcie</string>
-    <string name="compose_about_made_with">Vytvorené s ❤️ od Tapframe a priateľov</string>
+    <string name="compose_about_made_with">Vytvorené s ❤️ od CinemaOS a priateľov</string>
     <string name="compose_about_version_format">Verzia %1$s (%2$s)</string>
     <string name="compose_action_off">Vypnuté</string>
     <string name="compose_action_on">Zapnuté</string>
@@ -2572,5 +2572,5 @@
     <string name="settings_playback_downmix_channels">Počet kanálov</string>
     <string name="settings_playback_downmix_maintain_volume">Zachovať pôvodnú hlasitosť pri downmixovaní</string>
     <string name="settings_playback_downmix_maintain_volume_description">Keď je možnosť vypnutá, normalizácia downmixu môže znížiť celkovú hlasitosť.</string>
-    <string name="auth_notice_signed_out">Boli ste odhlásení z Nuvio. Prihláste sa znova.</string>
+    <string name="auth_notice_signed_out">Boli ste odhlásení z CinemaOS. Prihláste sa znova.</string>
 </resources>

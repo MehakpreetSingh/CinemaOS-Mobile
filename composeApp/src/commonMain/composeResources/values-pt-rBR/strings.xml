@@ -336,7 +336,7 @@
     <string name="collections_pinned">Fixado</string>
     <string name="collections_tab_all">Todos</string>
     <string name="collections_your_collections">Suas coleções</string>
-    <string name="compose_about_made_with">Feito com ❤️ por Tapframe e amigos</string>
+    <string name="compose_about_made_with">Feito com ❤️ por CinemaOS e amigos</string>
     <string name="compose_about_version_format">Versão %1$s (%2$s)</string>
     <string name="compose_action_off">Desativado</string>
     <string name="compose_action_on">Ativado</string>
@@ -1791,7 +1791,7 @@
     <string name="auth_account_deletion_failed">Falha na exclusão da conta</string>
     <string name="auth_sign_in_failed">Falha no login</string>
     <string name="auth_sign_out_failed">Falha ao sair</string>
-    <string name="auth_notice_signed_out">Você foi desconectado do Nuvio. Entre novamente.</string>
+    <string name="auth_notice_signed_out">Você foi desconectado do CinemaOS. Entre novamente.</string>
     <string name="auth_sign_up_failed">Falha no cadastro</string>
     <string name="catalog_load_failed">Não foi possível carregar itens do catálogo.</string>
     <string name="continue_watching_up_next">A seguir</string>
