@@ -1769,7 +1769,6 @@ private class NuvioLibmpvView(
         // MPV's one-second default can repeatedly resume into an empty cache on uneven links.
         mpv.setOptionString("cache-pause-wait", "5").logIfMpvError("cache-pause-wait")
         mpv.setOptionString("cache-pause-initial", "yes").logIfMpvError("cache-pause-initial")
-        mpv.setOptionString("network-timeout", "30").logIfMpvError("network-timeout")
         // Room above 100% for the player's amplification (+10 dB is about 316%).
         mpv.setOptionString("volume-max", "$LIBMPV_MAX_VOLUME_PERCENT").logIfMpvError("volume-max")
         mpv.setOptionString("vd-lavc-film-grain", "cpu")
