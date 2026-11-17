@@ -49,10 +49,10 @@ private const val TAG = "CinemaOsAccount"
 private class CinemaOsAuthException(val code: String) : Exception(code)
 
 /**
- * Android implementation of the CinemaOS account: device login against the website's /api/device/*
+ * Android implementation of the CinemaOS account: device login against the website's /api/device routes
  * routes, Firebase custom-token sign-in over the Identity Toolkit REST API (no Firebase SDK), and
  * Continue Watching / Watchlist sync against /api/watch-history and /api/watchlist (Bearer ID token).
- * Ported from the CinemaOS TV app (core/cinemaos/account/*), which mirrors the website's
+ * Ported from the CinemaOS TV app (core/cinemaos/account/), which mirrors the website's
  * continue-watching-service.ts, watchlist-service.ts and storage.ts write queue.
  *
  * Content ids: the site uses TMDB ids; the app keys content by IMDb id ("tt...") with "tmdb:<id>" as
