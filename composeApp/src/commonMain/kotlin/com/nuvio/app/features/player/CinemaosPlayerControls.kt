@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Toc
 import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Info
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.ClosedCaption
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Replay10
@@ -50,6 +52,7 @@ import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,6 +77,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.features.player.skip.AutoSkipSegmentType
 import com.nuvio.app.core.i18n.localizedEpisodeTitle
 import com.nuvio.app.core.ui.AppIconResource
 import com.nuvio.app.core.ui.NuvioBackButton
@@ -89,6 +94,7 @@ private class CinemaosMenuEntry(
     val icon: ImageVector? = null,
     val painter: Painter? = null,
     val value: String? = null,
+    val keepOpen: Boolean = false,
 )
 
 /**
@@ -143,6 +149,7 @@ internal fun CinemaosPlayerControls(
     val typeScale = MaterialTheme.nuvioTypeScale
     val foreground = tokens.colors.playerControlsForeground
     var menuOpen by remember { mutableStateOf(false) }
+    val playerSettings by PlayerSettingsRepository.uiState.collectAsStateWithLifecycle()
     var volumeLevel by remember { mutableStateOf<PlayerAudioLevel?>(gestureController?.currentVolume()) }
     var lastVolume by remember { mutableStateOf(0.5f) }
 
@@ -240,43 +247,47 @@ internal fun CinemaosPlayerControls(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (onPartyClick != null) {
-                        PlayerHeaderIconButton(
-                            icon = Icons.Rounded.Groups,
-                            contentDescription = stringResource(Res.string.party_title),
-                            buttonSize = headerButton,
-                            iconSize = metrics.headerIconSize,
+                        PlayerAction(
+                            description = stringResource(Res.string.party_title),
                             onClick = { onInteraction(); onPartyClick() },
+                            icon = Icons.Rounded.Groups,
+                            iconSize = metrics.headerIconSize,
                             tint = if (partyActive) MaterialTheme.colorScheme.primary else foreground,
                         )
                     }
                     if (onOpenInExternalPlayer != null) {
-                        PlayerHeaderIconButton(
-                            icon = Icons.AutoMirrored.Rounded.OpenInNew,
-                            contentDescription = stringResource(Res.string.streams_open_external_player),
-                            buttonSize = headerButton,
-                            iconSize = metrics.headerIconSize,
+                        PlayerAction(
+                            description = stringResource(Res.string.streams_open_external_player),
                             onClick = { onInteraction(); onOpenInExternalPlayer() },
+                            icon = Icons.AutoMirrored.Rounded.OpenInNew,
+                            iconSize = metrics.headerIconSize,
                             tint = foreground,
                         )
                     }
                     if (onSwitchEngineClick != null) {
-                        PlayerHeaderIconButton(
-                            icon = Icons.Rounded.SwapHoriz,
-                            contentDescription = stringResource(Res.string.cd_switch_player_engine),
-                            buttonSize = headerButton,
-                            iconSize = metrics.headerIconSize,
+                        PlayerAction(
+                            description = stringResource(Res.string.cd_switch_player_engine),
                             onClick = { onInteraction(); onSwitchEngineClick() },
+                            icon = Icons.Rounded.SwapHoriz,
+                            iconSize = metrics.headerIconSize,
                             tint = foreground,
                         )
                     }
-                    PlayerHeaderIconButton(
-                        icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-                        contentDescription = stringResource(
+                }
+
+                // Middle-left: lock.
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = sideInset),
+                ) {
+                    PlayerAction(
+                        description = stringResource(
                             if (isLocked) Res.string.compose_player_unlock_controls else Res.string.compose_player_lock_controls,
                         ),
-                        buttonSize = headerButton,
-                        iconSize = metrics.headerIconSize,
                         onClick = onLockToggle,
+                        icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+                        iconSize = metrics.headerIconSize,
                         tint = foreground,
                     )
                 }
@@ -290,34 +301,50 @@ internal fun CinemaosPlayerControls(
             )
 
             if (showPlaybackControls) {
-                // Center: seek only; play and pause live in the bottom row as on Cinemaos-V3.
+                // Center: seek back, a larger play and pause, seek forward.
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    val seekIconSize = metrics.playIconSize
+                    val playIconSizeLarge = metrics.playIconSize + 20.dp
                     Row(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(bottom = metrics.centerLift),
-                        horizontalArrangement = Arrangement.spacedBy(metrics.centerGap * 2),
+                        horizontalArrangement = Arrangement.spacedBy(metrics.centerGap),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        PlayerAction(
+                        CinemaosCenterButton(
                             description = stringResource(Res.string.compose_player_seek_back_10),
                             onClick = { onInteraction(); onSeekBack() },
+                            buttonSize = seekIconSize + 20.dp,
                             icon = Icons.Rounded.Replay10,
-                            iconSize = metrics.playIconSize,
+                            iconSize = seekIconSize,
                             tint = foreground,
                         )
-                        PlayerAction(
+                        CinemaosCenterButton(
+                            description = stringResource(
+                                if (playbackSnapshot.isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play,
+                            ),
+                            onClick = { onInteraction(); onTogglePlayback() },
+                            buttonSize = playIconSizeLarge + 20.dp,
+                            painter = appIconPainter(
+                                if (playbackSnapshot.isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay,
+                            ),
+                            iconSize = playIconSizeLarge,
+                            tint = foreground,
+                        )
+                        CinemaosCenterButton(
                             description = stringResource(Res.string.compose_player_seek_forward_10),
                             onClick = { onInteraction(); onSeekForward() },
+                            buttonSize = seekIconSize + 20.dp,
                             icon = Icons.Rounded.Forward10,
-                            iconSize = metrics.playIconSize,
+                            iconSize = seekIconSize,
                             tint = foreground,
                         )
                     }
                 }
 
-                // Bottom: timeline, then play, volume and next on the left, episodes in the center,
-                // sources, audio, subtitles and settings on the right.
+                // Bottom: timeline, then volume and next on the left, episodes in the center,
+                // sources, audio, subtitles, fit and settings on the right.
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -348,16 +375,6 @@ internal fun CinemaosPlayerControls(
                                 horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                PlayerAction(
-                                    description = stringResource(
-                                        if (playbackSnapshot.isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play,
-                                    ),
-                                    onClick = { onInteraction(); onTogglePlayback() },
-                                    painter = appIconPainter(
-                                        if (playbackSnapshot.isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay,
-                                    ),
-                                    tint = foreground,
-                                )
                                 if (gestureController != null) {
                                     PlayerAction(
                                         description = stringResource(Res.string.compose_player_muted),
@@ -435,6 +452,12 @@ internal fun CinemaosPlayerControls(
                                     tint = foreground,
                                 )
                                 PlayerAction(
+                                    description = stringResource(resizeMode.labelRes),
+                                    onClick = { onInteraction(); onResizeModeClick() },
+                                    painter = appIconPainter(AppIconResource.PlayerAspectRatio),
+                                    tint = foreground,
+                                )
+                                PlayerAction(
                                     description = stringResource(Res.string.compose_player_more_actions),
                                     onClick = { onInteraction(); menuOpen = !menuOpen },
                                     icon = Icons.Rounded.Settings,
@@ -469,18 +492,64 @@ internal fun CinemaosPlayerControls(
         ) {
             val speedLabel = stringResource(Res.string.compose_player_speed)
             val speedValue = formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)
+            val sourcesLabel = stringResource(Res.string.compose_player_sources)
+            val audioLabel = stringResource(Res.string.compose_player_audio)
+            val subtitlesLabel = stringResource(Res.string.compose_player_subtitles)
+            val subtitleStyleLabel = stringResource(Res.string.cinemaos_player_subtitle_style)
             val chaptersLabel = stringResource(Res.string.compose_player_chapters)
-            val resizeLabel = stringResource(resizeMode.labelRes)
             val infoLabel = stringResource(Res.string.cd_stream_info)
             val videoSettingsLabel = stringResource(Res.string.player_action_video_settings)
             val submitIntroLabel = stringResource(Res.string.submit_intro_action)
-            val aspectPainter = appIconPainter(AppIconResource.PlayerAspectRatio)
+            val autoNextLabel = stringResource(Res.string.settings_playback_auto_play_next_episode)
+            val skipIntroLabel = stringResource(Res.string.settings_playback_skip_intro_outro_recap)
+            val autoSkipLabel = stringResource(Res.string.settings_playback_auto_skip_intro)
+            val onText = stringResource(Res.string.cinemaos_player_on)
+            val offText = stringResource(Res.string.cinemaos_player_off)
+            val sourcesPainter = appIconPainter(AppIconResource.PlayerSource)
+            val audioPainter = appIconPainter(AppIconResource.PlayerAudioFilled)
+            val subtitlesPainter = appIconPainter(AppIconResource.PlayerSubtitles)
+            val isSeriesPlayback = onEpisodesClick != null
+            val autoSkipIntroOn = AutoSkipSegmentType.INTRO in playerSettings.autoSkipSegmentTypes
             val entries = buildList {
-                add(CinemaosMenuEntry(speedLabel, onSpeedClick, icon = Icons.Rounded.Speed, value = speedValue))
-                add(CinemaosMenuEntry(resizeLabel, onResizeModeClick, painter = aspectPainter))
+                add(CinemaosMenuEntry(speedLabel, onSpeedClick, icon = Icons.Rounded.Speed, value = speedValue, keepOpen = true))
+                if (onSourcesClick != null) {
+                    add(CinemaosMenuEntry(sourcesLabel, onSourcesClick, painter = sourcesPainter))
+                }
+                add(CinemaosMenuEntry(audioLabel, onAudioClick, painter = audioPainter))
+                add(CinemaosMenuEntry(subtitlesLabel, onSubtitleClick, painter = subtitlesPainter))
+                add(CinemaosMenuEntry(subtitleStyleLabel, onSubtitleClick, icon = Icons.Rounded.ClosedCaption))
                 if (onChaptersClick != null) {
                     add(CinemaosMenuEntry(chaptersLabel, onChaptersClick, icon = Icons.AutoMirrored.Rounded.Toc))
                 }
+                if (isSeriesPlayback) {
+                    add(
+                        CinemaosMenuEntry(
+                            autoNextLabel,
+                            { PlayerSettingsRepository.setStreamAutoPlayNextEpisodeEnabled(!playerSettings.streamAutoPlayNextEpisodeEnabled) },
+                            icon = Icons.Rounded.SkipNext,
+                            value = if (playerSettings.streamAutoPlayNextEpisodeEnabled) onText else offText,
+                            keepOpen = true,
+                        ),
+                    )
+                }
+                add(
+                    CinemaosMenuEntry(
+                        skipIntroLabel,
+                        { PlayerSettingsRepository.setSkipIntroEnabled(!playerSettings.skipIntroEnabled) },
+                        icon = Icons.Rounded.FastForward,
+                        value = if (playerSettings.skipIntroEnabled) onText else offText,
+                        keepOpen = true,
+                    ),
+                )
+                add(
+                    CinemaosMenuEntry(
+                        autoSkipLabel,
+                        { PlayerSettingsRepository.setAutoSkipSegmentTypeEnabled(AutoSkipSegmentType.INTRO, !autoSkipIntroOn) },
+                        icon = Icons.Rounded.FastForward,
+                        value = if (autoSkipIntroOn) onText else offText,
+                        keepOpen = true,
+                    ),
+                )
                 add(CinemaosMenuEntry(infoLabel, onStreamInfoClick, icon = Icons.Rounded.Info))
                 if (onVideoSettingsClick != null) {
                     add(CinemaosMenuEntry(videoSettingsLabel, onVideoSettingsClick, icon = Icons.Rounded.Build))
@@ -508,7 +577,7 @@ internal fun CinemaosPlayerControls(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(role = Role.Button) {
-                                menuOpen = false
+                                if (!entry.keepOpen) menuOpen = false
                                 onInteraction()
                                 entry.onClick()
                             }
@@ -550,6 +619,25 @@ internal fun CinemaosPlayerControls(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CinemaosCenterButton(
+    description: String,
+    onClick: () -> Unit,
+    buttonSize: Dp,
+    iconSize: Dp,
+    tint: Color,
+    icon: ImageVector? = null,
+    painter: Painter? = null,
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(buttonSize)) {
+        if (painter != null) {
+            Icon(painter, description, tint = tint, modifier = Modifier.size(iconSize))
+        } else if (icon != null) {
+            Icon(icon, description, tint = tint, modifier = Modifier.size(iconSize))
         }
     }
 }

@@ -11,4 +11,7 @@
     <string name="cinemaos_player_loading_links">Fetching links</string>
     <string name="cinemaos_player_previous_episode">Previous episode</string>
     <string name="cinemaos_player_next_episode">Next episode</string>
+    <string name="cinemaos_player_subtitle_style">Subtitle style and delay</string>
+    <string name="cinemaos_player_on">On</string>
+    <string name="cinemaos_player_off">Off</string>
 </resources>

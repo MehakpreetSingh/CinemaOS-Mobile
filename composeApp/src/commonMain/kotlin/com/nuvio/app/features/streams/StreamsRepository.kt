@@ -356,21 +356,13 @@ object StreamsRepository {
                     return
                 }
 
-                // CinemaOS sources arrive one after the other in priority order: as soon as the best link of
-                // the highest-ranked source that has answered is in and no higher-ranked source is still
-                // loading, start it instead of waiting for the lower-ranked ones.
+                // CinemaOS: the first playable link opens the player right away (like the TV app); the
+                // remaining sources keep loading from inside the player's sources panel.
                 if (autoPlayMode == StreamAutoPlayMode.FIRST_STREAM && persistedBingeGroup == null) {
                     val evaluation = evaluateAutoPlay()
-                    val picked = evaluation.stream
-                    if (picked != null) {
-                        val pickedRank = AutoPlayRanking.providerRank(picked.addonName)
-                        val higherRankedPending = _uiState.value.groups.any {
-                            it.isLoading && AutoPlayRanking.providerRank(it.addonName) > pickedRank
-                        }
-                        if (pickedRank > 0 && !higherRankedPending) {
-                            settleAutoPlay(evaluation)
-                            return
-                        }
+                    if (evaluation.stream != null) {
+                        settleAutoPlay(evaluation)
+                        return
                     }
                 }
 
