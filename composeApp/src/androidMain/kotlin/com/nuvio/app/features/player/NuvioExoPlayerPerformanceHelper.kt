@@ -16,7 +16,7 @@ internal object NuvioExoPlayerPerformanceHelper {
     private const val MIN_BUFFER_MB = 25
     private const val MIN_BUFFER_MS = 15_000
     private const val MAX_BUFFER_MS = 45_000
-    private const val BUFFER_FOR_PLAYBACK_MS = 3_000
+    private const val BUFFER_FOR_PLAYBACK_MS = 2_500
     private const val LOCAL_FILE_MIN_BUFFER_MS = 5_000
     private const val LOCAL_FILE_MAX_BUFFER_MS = 15_000
     private const val LOCAL_FILE_TARGET_BUFFER_MB = 48
@@ -94,13 +94,14 @@ internal object NuvioExoPlayerPerformanceHelper {
             return buildCustomLoadControl(context, bufferSettings)
         }
         if (!enabled) {
+            // Same buffer profile as the CinemaOS phone / TV apps: start after 2.5 s, rebuffer 5 s, no back buffer.
             return DefaultLoadControl.Builder()
                 .setBackBuffer(PlaybackBufferSettings.DEFAULT_BACK_BUFFER_MS, true)
                 .setBufferDurationsMs(
-                    DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-                    50_000,
-                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                    DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+                    PlaybackBufferSettings.DEFAULT_MIN_BUFFER_MS,
+                    PlaybackBufferSettings.DEFAULT_MAX_BUFFER_MS,
+                    PlaybackBufferSettings.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+                    PlaybackBufferSettings.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
                 )
                 .build()
         }

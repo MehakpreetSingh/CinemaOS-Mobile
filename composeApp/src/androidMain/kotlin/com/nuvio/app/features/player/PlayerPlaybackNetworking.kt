@@ -55,6 +55,7 @@ internal object PlayerPlaybackNetworking {
             .followRedirects(true)
             .followSslRedirects(true)
             .retryOnConnectionFailure(true)
+            .addInterceptor(MkvCuesInterceptor())
             .addInterceptor(NetworkErrorInterceptor())
             .addInterceptor(SentryNetworkBreadcrumbInterceptor())
             .build()
