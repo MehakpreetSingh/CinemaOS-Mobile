@@ -166,12 +166,12 @@ androidComponents {
         variant.applicationId.set("com.cinemaos.app.dev")
     }
     onVariants(selector().withBuildType("benchmark")) { variant ->
-        variant.applicationId.set("com.nuviodebug.com")
+        variant.applicationId.set("com.cinemaos.app.benchmark")
     }
     onVariants { variant ->
         val buildType = variant.buildType.orEmpty()
         if (buildType.startsWith("nonMinified") || buildType.startsWith("benchmark") && buildType != "benchmark") {
-            variant.applicationId.set("com.nuviodebug.com")
+            variant.applicationId.set("com.cinemaos.app.benchmark")
             variant.signingConfig.setConfig(android.signingConfigs.getByName("debug"))
         }
     }
