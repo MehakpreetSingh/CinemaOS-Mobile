@@ -587,9 +587,11 @@ internal fun CinemaosPlayerControls(
     var menuOpen by remember { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val cosMaxW = maxWidth
+        val cosMaxH = maxHeight
         val size = when {
-            maxWidth < 420.dp || maxHeight < 240.dp -> CinemaosSize.Xs
-            maxWidth < 820.dp || maxHeight < 420.dp || maxWidth < maxHeight * 1.4f -> CinemaosSize.Sm
+            cosMaxW < 420.dp || cosMaxH < 240.dp -> CinemaosSize.Xs
+            cosMaxW < 820.dp || cosMaxH < 420.dp || cosMaxW < cosMaxH * 1.4f -> CinemaosSize.Sm
             else -> CinemaosSize.Md
         }
         val compact = size != CinemaosSize.Md
@@ -610,7 +612,7 @@ internal fun CinemaosPlayerControls(
         }
         val barIcon = when {
             size == CinemaosSize.Xs -> 22.dp
-            maxWidth < 768.dp -> 28.dp
+            cosMaxW < 768.dp -> 28.dp
             else -> 38.dp
         }
         val topButton = when (size) {
@@ -633,7 +635,7 @@ internal fun CinemaosPlayerControls(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(minOf(280.dp, maxHeight * 0.55f))
+                .height(minOf(280.dp, cosMaxH * 0.55f))
                 .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
@@ -668,7 +670,7 @@ internal fun CinemaosPlayerControls(
                         .align(Alignment.TopStart)
                         .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
                         .padding(start = sideInset, top = topInset)
-                        .widthIn(max = maxWidth * if (compact) 0.9f else 0.5f),
+                        .widthIn(max = cosMaxW * if (compact) 0.9f else 0.5f),
                     horizontalArrangement = Arrangement.spacedBy(if (size == CinemaosSize.Md) 12.dp else 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -777,8 +779,8 @@ internal fun CinemaosPlayerControls(
                     CinemaosCenterControls(
                         snapshot = playbackSnapshot,
                         size = size,
-                        containerWidth = maxWidth,
-                        containerHeight = maxHeight,
+                        containerWidth = cosMaxW,
+                        containerHeight = cosMaxH,
                         onSeekBack = { onInteraction(); onSeekBack() },
                         onSeekForward = { onInteraction(); onSeekForward() },
                         onTogglePlayback = { onInteraction(); onTogglePlayback() },
@@ -879,7 +881,7 @@ internal fun CinemaosPlayerControls(
                                         role = Role.Button,
                                         onClick = { onInteraction(); onEpisodesClick() },
                                     )
-                                    .padding(horizontal = if (maxWidth < 1024.dp || compact) 4.dp else 12.dp),
+                                    .padding(horizontal = if (cosMaxW < 1024.dp || compact) 4.dp else 12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -889,7 +891,7 @@ internal fun CinemaosPlayerControls(
                                     tint = Color.White.copy(alpha = 0.9f),
                                     modifier = Modifier.size(barIcon),
                                 )
-                                if (maxWidth >= 1024.dp && !compact) {
+                                if (cosMaxW >= 1024.dp && !compact) {
                                     Text(
                                         text = episodesLabel,
                                         color = Color.White.copy(alpha = 0.9f),
@@ -1008,7 +1010,7 @@ internal fun CinemaosPlayerControls(
                     menuOpen = false
                     onInteraction()
                 },
-                maxPanelHeight = maxHeight - barButton - 120.dp,
+                maxPanelHeight = cosMaxH - barButton - 120.dp,
             )
         }
     }

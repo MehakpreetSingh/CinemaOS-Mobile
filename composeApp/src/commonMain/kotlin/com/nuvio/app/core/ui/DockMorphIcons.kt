@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 
 /**
  * SVG path-morphing dock icons. Every icon has an inactive and an active path written with the
@@ -127,7 +128,7 @@ internal fun DockMorphIcon(
         val s = size.width / 24f
         icon.build(path, progress)
         val fillAlpha = progress.coerceIn(0f, 1f)
-        androidx.compose.ui.graphics.drawscope.withTransform({ scale(s, s, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
+        withTransform({ scale(s, s, pivot = androidx.compose.ui.geometry.Offset.Zero) }) {
             if (fillAlpha > 0f) drawPath(path, tint.copy(alpha = tint.alpha * fillAlpha), style = Fill)
             drawPath(
                 path,
