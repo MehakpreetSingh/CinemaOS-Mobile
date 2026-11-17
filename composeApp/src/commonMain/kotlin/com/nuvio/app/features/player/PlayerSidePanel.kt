@@ -102,7 +102,7 @@ internal fun PlayerSidePanel(
                 ),
         ) {
             val resolvedWidth = minOf(maxWidth, width)
-            val shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
+            val shape = RoundedCornerShape(topStart = 26.dp, bottomStart = 26.dp)
 
             Column(
                 modifier = Modifier
@@ -114,7 +114,8 @@ internal fun PlayerSidePanel(
                     .width(resolvedWidth)
                     .fillMaxHeight()
                     .clip(shape)
-                    .background(tokens.colors.surfaceElevated)
+                    .background(CinemaosPlayerColors.Panel)
+                    .border(1.dp, CinemaosPlayerColors.PanelHairline, shape)
                     .clickable(
                         interactionSource = panelInteraction,
                         indication = null,

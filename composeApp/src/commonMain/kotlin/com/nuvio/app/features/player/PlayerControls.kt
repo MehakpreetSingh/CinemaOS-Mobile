@@ -180,6 +180,47 @@ internal fun PlayerControlsShell(
         )
         return
     }
+    // CinemaOS website player layout (both the default and the legacy setting use it).
+    CinemaosPlayerControls(
+        title = title,
+        seasonNumber = seasonNumber,
+        episodeNumber = episodeNumber,
+        episodeTitle = episodeTitle,
+        playbackSnapshot = playbackSnapshot,
+        displayedPositionMs = displayedPositionMs,
+        resizeMode = resizeMode,
+        chapters = chapters,
+        showPlaybackControls = showPlaybackControls,
+        horizontalSafePadding = horizontalSafePadding,
+        onInteraction = onInteraction,
+        onBack = onBack,
+        onLockToggle = onLockToggle,
+        onPartyClick = onPartyClick,
+        partyActive = partyActive,
+        onSwitchEngineClick = onSwitchEngineClick,
+        onNextEpisodeClick = onNextEpisodeClick,
+        onTogglePlayback = onTogglePlayback,
+        onSeekBack = onSeekBack,
+        onSeekForward = onSeekForward,
+        onScrubChange = onScrubChange,
+        onScrubFinished = onScrubFinished,
+        onSubtitleClick = onSubtitleClick,
+        onAudioClick = onAudioClick,
+        onSourcesClick = onSourcesClick,
+        onEpisodesClick = onEpisodesClick,
+        onChaptersClick = onChaptersClick,
+        onSpeedClick = onSpeedClick,
+        onResizeModeClick = onResizeModeClick,
+        onVideoSettingsClick = onVideoSettingsClick,
+        onOpenInExternalPlayer = onOpenInExternalPlayer,
+        onSubmitIntroClick = onSubmitIntroClick,
+        onStreamInfoClick = onStreamInfoClick,
+        parentalWarnings = parentalWarnings,
+        showParentalGuide = showParentalGuide,
+        onParentalGuideAnimationComplete = onParentalGuideAnimationComplete,
+        modifier = modifier,
+    )
+    if (true) return
     val density = LocalDensity.current
     var timelineHeight by remember { mutableStateOf(0.dp) }
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {

@@ -56,6 +56,8 @@ data class PlayerLaunch(
     val sourceFromLinkCache: Boolean = false,
     /** The source was picked by auto source selection (or reused from the link cache). */
     val sourceAutoSelected: Boolean = false,
+    /** Opens the player with no source yet and the in-player sources panel showing the fetched links. */
+    val openSourcesOnStart: Boolean = false,
 )
 
 object PlayerLaunchStore {

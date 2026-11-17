@@ -85,6 +85,25 @@ fun PlayerEpisodesPanel(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (!episodeStreamsState.showStreams) {
+        // The CinemaOS website's episodes deck (season switcher, fanned cards, numbered strip).
+        CinemaosEpisodesDeck(
+            visible = visible,
+            episodes = episodes,
+            parentMetaType = parentMetaType,
+            parentMetaId = parentMetaId,
+            currentSeason = currentSeason,
+            currentEpisode = currentEpisode,
+            progressByVideoId = progressByVideoId,
+            watchedKeys = watchedKeys,
+            blurUnwatchedEpisodes = blurUnwatchedEpisodes,
+            onSeasonSelected = onSeasonSelected,
+            onEpisodeSelected = onEpisodeSelected,
+            onDismiss = onDismiss,
+            modifier = modifier,
+        )
+        return
+    }
     PlayerSidePanel(
         visible = visible,
         onDismiss = onDismiss,
@@ -96,11 +115,7 @@ fun PlayerEpisodesPanel(
                 .padding(24.dp),
         ) {
             PlayerPanelHeader(
-                title = if (episodeStreamsState.showStreams) {
-                    stringResource(Res.string.compose_player_panel_streams)
-                } else {
-                    stringResource(Res.string.compose_player_panel_episodes)
-                },
+                title = stringResource(Res.string.compose_player_panel_streams),
             ) {
                 PlayerDialogButton(
                     label = stringResource(Res.string.action_close),
@@ -110,30 +125,14 @@ fun PlayerEpisodesPanel(
 
             Spacer(Modifier.height(16.dp))
 
-            if (episodeStreamsState.showStreams) {
-                EpisodeStreamsPanelContent(
-                    state = episodeStreamsState,
-                    onFilterSelected = onEpisodeStreamFilterSelected,
-                    onStreamSelected = onEpisodeStreamSelected,
-                    onBack = onBackToEpisodes,
-                    onReload = onReloadEpisodeStreams,
-                    modifier = Modifier.weight(1f),
-                )
-            } else {
-                EpisodesListPanelContent(
-                    episodes = episodes,
-                    parentMetaType = parentMetaType,
-                    parentMetaId = parentMetaId,
-                    currentSeason = currentSeason,
-                    currentEpisode = currentEpisode,
-                    progressByVideoId = progressByVideoId,
-                    watchedKeys = watchedKeys,
-                    blurUnwatchedEpisodes = blurUnwatchedEpisodes,
-                    onSeasonSelected = onSeasonSelected,
-                    onEpisodeSelected = onEpisodeSelected,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            EpisodeStreamsPanelContent(
+                state = episodeStreamsState,
+                onFilterSelected = onEpisodeStreamFilterSelected,
+                onStreamSelected = onEpisodeStreamSelected,
+                onBack = onBackToEpisodes,
+                onReload = onReloadEpisodeStreams,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

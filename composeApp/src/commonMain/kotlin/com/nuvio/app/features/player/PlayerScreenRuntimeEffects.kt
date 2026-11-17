@@ -161,12 +161,21 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
 
         // A source that does not finish loading within the configured time counts as failed when
         // falling back to the next source. It has an effect only where that fallback applies.
+        if (activeSourceUrl.isBlank()) return@LaunchedEffect
         val startupTimeoutSeconds = playerSettingsUiState.streamAutoPlayFallbackStartupTimeoutSeconds
         delay(startupTimeoutSeconds * 1_000L)
         if (!initialLoadCompleted && errorMessage == null) {
             tryFallbackToNextSourceAfterError(
                 getString(Res.string.player_error_source_startup_timeout, startupTimeoutSeconds),
             )
+        }
+    }
+
+    // Auto-pick found no playable link: the player opens with no source and lists the fetched
+    // links in its own sources panel instead of sending the user to the streams screen.
+    LaunchedEffect(args.openSourcesOnStart, activeSourceUrl) {
+        if (args.openSourcesOnStart && activeSourceUrl.isBlank()) {
+            openSourcesPanel()
         }
     }
 

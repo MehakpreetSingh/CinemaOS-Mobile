@@ -34,6 +34,7 @@ import com.nuvio.app.features.player.sanitizePlaybackHeaders
 import com.nuvio.app.features.player.sanitizePlaybackResponseHeaders
 import com.nuvio.app.features.servers.ServerPlayback
 import com.nuvio.app.features.servers.serverPlaybackMessage
+import com.nuvio.app.features.streams.StreamAutoPlayPolicy
 import com.nuvio.app.features.streams.StreamBehaviorHints
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamLaunchStore
@@ -572,6 +573,51 @@ internal fun StreamDestination(
         StreamsRepository.consumeAutoPlay()
         StreamsRepository.cancelLoading()
         autoPlayNavigationStarted = true
+        val launchId = PlayerLaunchStore.put(playerLaunch)
+        navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
+            popUpTo<StreamRoute> { inclusive = true }
+        }
+    }
+
+    // Auto-pick finished without a playable link: still land in the player, which opens its own
+    // sources panel with the fetched links, rather than showing the streams screen.
+    val autoPickFoundNothing = !launch.manualSelection &&
+        StreamAutoPlayPolicy.isEffectivelyEnabled(playerSettings) &&
+        reuseHandled && !reuseNavigated && !autoPlayHandled && !autoPlayNavigationStarted &&
+        pendingP2pStreamOpen == null &&
+        streamsUiState.requestToken == expectedStreamsRequestToken &&
+        streamsUiState.autoPlayDecided &&
+        !streamsUiState.isDirectAutoPlayFlow &&
+        streamsUiState.autoPlayStream == null &&
+        !streamsUiState.isAnyLoading &&
+        streamsUiState.groups.none { it.isLoading }
+    LaunchedEffect(autoPickFoundNothing, hasResolvedVideoId) {
+        if (!autoPickFoundNothing || !hasResolvedVideoId) return@LaunchedEffect
+        autoPlayNavigationStarted = true
+        val playerLaunch = PlayerLaunch(
+            profileId = launch.profileId,
+            title = launch.title,
+            sourceUrl = "",
+            streamType = null,
+            logo = launch.logo,
+            poster = launch.poster,
+            background = launch.background,
+            seasonNumber = launch.seasonNumber,
+            episodeNumber = launch.episodeNumber,
+            episodeTitle = launch.episodeTitle,
+            episodeThumbnail = launch.episodeThumbnail,
+            streamTitle = "",
+            pauseDescription = pauseDescription,
+            providerName = "",
+            contentType = launch.type,
+            videoId = effectiveVideoId,
+            parentMetaId = launch.parentMetaId ?: effectiveVideoId,
+            parentMetaType = launch.parentMetaType ?: launch.type,
+            initialPositionMs = launch.resumePositionMs ?: 0L,
+            initialProgressFraction = launch.resumeProgressFraction,
+            contentLanguage = resolveLaunchContentLanguage(),
+            openSourcesOnStart = true,
+        )
         val launchId = PlayerLaunchStore.put(playerLaunch)
         navController.navigate(PlayerRoute(launchId = launchId, title = playerLaunch.title)) {
             popUpTo<StreamRoute> { inclusive = true }

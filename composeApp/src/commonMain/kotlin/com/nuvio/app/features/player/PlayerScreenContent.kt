@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.asPaddingValues
@@ -138,12 +139,9 @@ internal fun PlayerScreenContent(args: PlayerScreenArgs) {
         runtime.horizontalSafePadding = horizontalSafePadding
         runtime.metrics = metrics
         runtime.sliderEdgePadding = horizontalSafePadding + metrics.horizontalPadding
-        runtime.overlayBottomPadding = if (playerSettingsUiState.useLegacyPlayerLayout) {
-            sliderOverlayBottomPadding(metrics)
-        } else {
-            playerTimelineBottomInsets(metrics).asPaddingValues().calculateBottomPadding() +
-                72.dp + PlayerSliderOverlayGap
-        }
+        // The CinemaOS controls (timeline row + button row) sit above the system inset.
+        runtime.overlayBottomPadding = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding() +
+            108.dp + PlayerSliderOverlayGap
         runtime.sideGestureSystemEdgeExclusionPx = with(density) {
             PlayerSideGestureSystemEdgeExclusion.toPx()
         }

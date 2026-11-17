@@ -220,7 +220,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
         }
         val resolvedAutoEngine = resolvedAutoEngineState.value
 
-        if (playerSurfaceSourceUrl != null) {
+        if (!playerSurfaceSourceUrl.isNullOrBlank()) {
             key(playbackKey) {
                 val active = remember { mutableStateOf(true) }
                 DisposableEffect(Unit) {

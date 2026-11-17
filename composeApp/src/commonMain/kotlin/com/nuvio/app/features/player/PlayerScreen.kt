@@ -49,6 +49,7 @@ fun PlayerScreen(
     stream: com.nuvio.app.features.streams.StreamItem? = null,
     sourceFromLinkCache: Boolean = false,
     sourceAutoSelected: Boolean = false,
+    openSourcesOnStart: Boolean = false,
 ) {
     PlayerScreenContent(
         PlayerScreenArgs(
@@ -95,6 +96,7 @@ fun PlayerScreen(
             stream = stream,
             sourceFromLinkCache = sourceFromLinkCache,
             sourceAutoSelected = sourceAutoSelected,
+            openSourcesOnStart = openSourcesOnStart,
         )
     )
 }

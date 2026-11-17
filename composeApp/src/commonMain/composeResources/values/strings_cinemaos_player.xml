@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cinemaos_player_settings">Settings</string>
+    <string name="cinemaos_player_episode_count">%1$d episodes</string>
+    <string name="cinemaos_player_season_label">Season %1$d</string>
+    <string name="cinemaos_player_season_short">S%1$d</string>
+    <string name="cinemaos_player_play_episode">Play</string>
+    <string name="cinemaos_player_episodes_title">Episodes</string>
+    <string name="cinemaos_player_close_episodes">Close episodes</string>
+    <string name="cinemaos_player_go_to_episode">Go to episode</string>
+    <string name="cinemaos_player_loading_links">Fetching links</string>
+    <string name="cinemaos_player_previous_episode">Previous episode</string>
+    <string name="cinemaos_player_next_episode">Next episode</string>
+</resources>
