@@ -57,7 +57,7 @@ internal fun NavigationBarSettingsSheet(
                 )
                 NavigationBarPreview(selectedStyle, isTablet, glowEnabled)
             }
-            if (!isTablet) {
+            run {
                 NavBarStyle.entries.forEach { style ->
                     item(key = style.key) {
                         NuvioBottomSheetActionRow(
@@ -78,7 +78,7 @@ internal fun NavigationBarSettingsSheet(
                 }
             }
             item {
-                AnimatedVisibility(floatingNavigationGlowSupported && selectedStyle != NavBarStyle.CLASSIC) {
+                AnimatedVisibility(floatingNavigationGlowSupported) {
                     Column {
                         NuvioBottomSheetDivider()
                         SettingsSwitchRow(

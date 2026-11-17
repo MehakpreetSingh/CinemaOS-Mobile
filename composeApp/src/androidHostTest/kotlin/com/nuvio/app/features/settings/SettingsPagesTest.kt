@@ -126,10 +126,10 @@ class SettingsPagesTest {
             assertEquals(destination, opened)
         }
         compose.onNode(hasText("Navigation Bar") and hasClickAction()).performScrollTo().performClick()
-        compose.onNodeWithText("Classic").performScrollTo().performClick()
-        assertEquals(NavBarStyle.CLASSIC, ThemeSettingsRepository.navBarStyle.value)
+        compose.onNodeWithText("Expanded").performScrollTo().performClick()
+        assertEquals(NavBarStyle.EXPANDED, ThemeSettingsRepository.navBarStyle.value)
         compose.runOnIdle { ThemeSettingsRepository.onProfileChanged() }
-        assertEquals(NavBarStyle.CLASSIC, ThemeSettingsRepository.navBarStyle.value)
+        assertEquals(NavBarStyle.EXPANDED, ThemeSettingsRepository.navBarStyle.value)
     }
 
     @Test

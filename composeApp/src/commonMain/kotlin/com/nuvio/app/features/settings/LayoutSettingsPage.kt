@@ -115,7 +115,7 @@ internal fun LazyListScope.layoutSettingsContent(
             val selectedNavBarStyle by ThemeSettingsRepository.navBarStyle.collectAsStateWithLifecycle()
             val glowEnabled by ThemeSettingsRepository.navBarGlowEnabled.collectAsStateWithLifecycle()
             val liquidGlassNativeTabBarEnabled by ThemeSettingsRepository.liquidGlassNativeTabBarEnabled.collectAsStateWithLifecycle()
-            val effectiveNavBarStyle = if (isTablet) NavBarStyle.COMPACT else selectedNavBarStyle
+            val effectiveNavBarStyle = selectedNavBarStyle
             val navBarStyleAvailable = !isIos
             SettingsSection(
                 title = stringResource(Res.string.settings_appearance_nav_bar_style),
@@ -135,7 +135,7 @@ internal fun LazyListScope.layoutSettingsContent(
                         if (liquidGlassNativeTabBarSupported) SettingsGroupDivider(isTablet = isTablet)
                         SettingsNavigationRow(
                             title = stringResource(Res.string.settings_appearance_nav_bar_style),
-                            description = if (floatingNavigationGlowSupported && effectiveNavBarStyle != NavBarStyle.CLASSIC) {
+                            description = if (floatingNavigationGlowSupported) {
                                 stringResource(
                                     Res.string.settings_nav_bar_summary,
                                     stringResource(effectiveNavBarStyle.labelRes),

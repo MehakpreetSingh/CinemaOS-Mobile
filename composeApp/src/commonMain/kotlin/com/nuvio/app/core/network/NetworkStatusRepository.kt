@@ -136,16 +136,7 @@ object NetworkStatusRepository {
             return NetworkCondition.NoInternet
         }
 
-        val supabaseReachable = SupabaseEndpointConfig.restEndpointUrls().any { url ->
-            probeReachable(
-                url = url,
-                headers = mapOf("apikey" to ServerConfigurationRepository.active.value.publishableKey),
-            )
-        }
-        if (!supabaseReachable) {
-            return NetworkCondition.ServersUnreachable
-        }
-
+        // CinemaOS has no Nuvio/Supabase backend, so only general internet reachability matters.
         return NetworkCondition.Online
     }
 

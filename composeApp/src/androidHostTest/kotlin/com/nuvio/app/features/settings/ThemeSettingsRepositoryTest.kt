@@ -40,7 +40,7 @@ class ThemeSettingsRepositoryTest {
         assertEquals(true, ThemeSettingsRepository.navBarGlowEnabled.value)
 
         ThemeSettingsRepository.setNavBarGlowEnabled(false)
-        ThemeSettingsRepository.setNavBarStyle(NavBarStyle.CLASSIC)
+        ThemeSettingsRepository.setNavBarStyle(NavBarStyle.EXPANDED)
         ThemeSettingsRepository.setNavBarStyle(NavBarStyle.COMPACT)
         ThemeSettingsRepository.clearLocalState()
         ThemeSettingsRepository.ensureLoaded()

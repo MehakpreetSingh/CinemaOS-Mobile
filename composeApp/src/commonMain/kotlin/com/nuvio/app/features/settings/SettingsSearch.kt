@@ -108,8 +108,6 @@ internal fun settingsSearchEntries(
     val detailPage = stringResource(Res.string.compose_settings_page_meta_screen)
     val continueWatchingPage = stringResource(Res.string.compose_settings_page_continue_watching)
     val posterStylePage = stringResource(Res.string.compose_settings_page_poster_customization)
-    val addonsPage = stringResource(Res.string.compose_settings_page_addons)
-    val pluginsPage = stringResource(Res.string.compose_settings_page_plugins)
     val collectionsPage = stringResource(Res.string.collections_header)
     val tmdbPage = stringResource(Res.string.compose_settings_page_tmdb_enrichment)
     val mdbListPage = stringResource(Res.string.compose_settings_page_mdblist_ratings)
@@ -460,32 +458,6 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.settings_appearance_poster_customization_description),
     )
 
-    addPage(
-        page = SettingsPage.Addons,
-        key = "addons",
-        title = addonsPage,
-        description = stringResource(
-            if (personalMediaAddonCopyEnabled) {
-                Res.string.settings_content_discovery_addons_description_appstore
-            } else {
-                Res.string.settings_content_discovery_addons_description
-            },
-        ),
-    )
-    addPage(
-        page = SettingsPage.MediaServers,
-        key = "media-servers",
-        title = stringResource(Res.string.compose_settings_page_media_servers),
-        description = stringResource(Res.string.settings_content_discovery_media_servers_description),
-    )
-    if (pluginsEnabled) {
-        addPage(
-            page = SettingsPage.Plugins,
-            key = "plugins",
-            title = pluginsPage,
-            description = stringResource(Res.string.settings_content_discovery_plugins_description),
-        )
-    }
     addPage(
         page = SettingsPage.Homescreen,
         key = "home-layout",

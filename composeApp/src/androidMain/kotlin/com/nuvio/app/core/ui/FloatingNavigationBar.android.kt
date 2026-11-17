@@ -70,7 +70,7 @@ import kotlin.math.abs
 import kotlin.math.max
 
 internal actual val floatingNavigationGlowSupported: Boolean
-    get() = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+    get() = true
 
 @Composable
 internal actual fun FloatingNavigationBar(
@@ -90,6 +90,8 @@ internal actual fun FloatingNavigationBar(
     val dockSurface = MaterialTheme.colorScheme.surface
     val dockBorder = MaterialTheme.colorScheme.onSurface
     val dockShadow = MaterialTheme.colorScheme.scrim
+    // Nav bar style: Expanded keeps the active tab name, Compact shows icons only, Adaptive follows scrolling.
+    val labelsVisible = (scrollState?.labelVisibility ?: 1f) > 0.5f
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -127,14 +129,24 @@ internal actual fun FloatingNavigationBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             items.forEach { item ->
-                CinemaDockSlot(item = item, compactSize = compactSize)
+                CinemaDockSlot(
+                    item = item,
+                    compactSize = compactSize,
+                    showLabel = labelsVisible,
+                    glowEnabled = glowEnabled,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
+private fun CinemaDockSlot(
+    item: FloatingNavigationItem,
+    compactSize: Boolean,
+    showLabel: Boolean,
+    glowEnabled: Boolean,
+) {
     val on = item.selected
     val pillColor = MaterialTheme.colorScheme.primary
     val onPillColor = MaterialTheme.colorScheme.onPrimary
@@ -161,7 +173,7 @@ private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
             .height(slotHeight)
             .widthIn(min = 44.dp)
             .then(
-                if (on) {
+                if (on && glowEnabled) {
                     Modifier.shadow(10.dp, shape, clip = false, ambientColor = pillColor, spotColor = pillColor)
                 } else {
                     Modifier
@@ -174,7 +186,7 @@ private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
                 role = Role.Tab,
                 onClick = item.onClick,
             )
-            .padding(horizontal = if (on) 13.dp else 10.dp),
+            .padding(horizontal = if (on && showLabel) 13.dp else 10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -184,7 +196,7 @@ private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
             item.drawable != null -> Icon(painterResource(item.drawable), item.label, Modifier.size(iconSize), tint = tint)
             item.icon != null -> Icon(item.icon, item.label, Modifier.size(iconSize), tint = tint)
         }
-        if (on) {
+        if (on && showLabel) {
             Text(
                 text = item.label,
                 color = onPillColor,
