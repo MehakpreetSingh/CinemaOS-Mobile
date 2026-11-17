@@ -14,6 +14,7 @@ import com.nuvio.app.features.plugins.PluginsUiState
 import com.nuvio.app.features.servers.ServerStreams
 import com.nuvio.app.features.streams.AddonStreamGroup
 import com.nuvio.app.features.streams.InstalledStreamAddonTarget
+import com.nuvio.app.features.streams.NativeCinemaSources
 import com.nuvio.app.features.streams.StreamAutoPlaySelector
 import com.nuvio.app.features.streams.StreamBadgePresentation
 import com.nuvio.app.features.streams.StreamBadgeSettingsRepository
@@ -23,6 +24,8 @@ import com.nuvio.app.features.streams.StreamSearchTargets
 import com.nuvio.app.features.streams.withoutPendingGroups
 import com.nuvio.app.features.streams.StreamsUiState
 import com.nuvio.app.features.streams.sortedForGroupedDisplay
+import com.nuvio.app.features.streams.supportsNativeSources
+import com.nuvio.app.features.streams.toTarget
 import com.nuvio.app.features.streams.streamAddonInstanceId
 import com.nuvio.app.features.streams.supportsStream
 import com.nuvio.app.features.streams.toEmptyStateReason
@@ -242,7 +245,14 @@ object PlayerStreamsRepository {
             groupByRepository = pluginUiState.groupStreamsByRepository,
         )
 
-        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty()) {
+        // Same built-in sources as the stream screen, so both share one search.
+        val nativeTargets = if (!isNativeServerRequest && supportsNativeSources(type, videoId)) {
+            NativeCinemaSources.providers().map { it.toTarget() }
+        } else {
+            emptyList()
+        }
+
+        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty() && nativeTargets.isEmpty()) {
             stateFlow.value = StreamsUiState(
                 isAnyLoading = false,
                 emptyStateReason = com.nuvio.app.features.streams.StreamsEmptyStateReason.NoAddonsInstalled,
@@ -262,7 +272,7 @@ object PlayerStreamsRepository {
                 )
             }
 
-        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty()) {
+        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty() && nativeTargets.isEmpty()) {
             stateFlow.value = StreamsUiState(
                 isAnyLoading = false,
                 emptyStateReason = com.nuvio.app.features.streams.StreamsEmptyStateReason.NoCompatibleAddons,
@@ -278,9 +288,17 @@ object PlayerStreamsRepository {
             streamAddons = streamAddons,
             serverSources = serverSources,
             pluginProviderGroups = pluginProviderGroups,
+            nativeProviders = nativeTargets,
         )
         val installedAddonOrder = streamAddons.map { it.addonName }
-        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(streamAddons.map { addon ->
+        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(nativeTargets.map { target ->
+            AddonStreamGroup(
+                addonName = target.addonName,
+                addonId = target.addonId,
+                streams = emptyList(),
+                isLoading = true,
+            )
+        } + streamAddons.map { addon ->
             AddonStreamGroup(
                 addonName = addon.addonName,
                 addonId = addon.addonId,
@@ -364,6 +382,8 @@ object PlayerStreamsRepository {
                                     } else {
                                         val mergedStreams = if (completion.streams.isEmpty()) {
                                             group.streams
+                                        } else if (group.addonId.startsWith("native:")) {
+                                            group.streams + completion.streams
                                         } else {
                                             (group.streams + completion.streams).sortedForGroupedDisplay()
                                         }

@@ -25,7 +25,8 @@ internal fun hasCompatiblePlaybackSource(
     type: String,
     videoId: String,
 ): Boolean = addons.any { it.enabled && it.manifest?.supportsStream(type, videoId) == true } ||
-    (plugins.pluginsEnabled && plugins.scrapers.any { it.enabled && it.supportsType(type) })
+    (plugins.pluginsEnabled && plugins.scrapers.any { it.enabled && it.supportsType(type) }) ||
+    (supportsNativeSources(type, videoId) && NativeCinemaSources.providers().isNotEmpty())
 
 internal class PlaybackAvailability(
     private val addons: List<ManagedAddon>,
