@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,7 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.NuvioPrimaryButton
-import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.features.cinemaos.CinemaOsAccount
 import com.nuvio.app.features.cinemaos.CinemaOsDeviceCode
 import com.nuvio.app.features.cinemaos.CinemaOsPollResult
@@ -116,7 +116,8 @@ internal fun CinemaOsAccountCard() {
         }
     }
 
-    NuvioSurfaceCard {
+    SettingsGroup(isTablet = false) {
+      Column(modifier = Modifier.padding(18.dp)) {
         Text(
             text = "CinemaOS account",
             style = MaterialTheme.typography.titleLarge,
@@ -245,5 +246,6 @@ internal fun CinemaOsAccountCard() {
                 }
             }
         }
+      }
     }
 }

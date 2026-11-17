@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioBackButton
@@ -79,10 +80,10 @@ private fun SettingsCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = tokens.colors.surface,
-        shape = tokens.shapes.card,
+        shape = RoundedCornerShape(20.dp),
         border = BorderStroke(
             tokens.borders.hairline,
-            tokens.colors.borderSubtle,
+            tokens.colors.borderDefault.copy(alpha = 0.6f),
         ),
     ) {
         Column(content = content)
@@ -220,7 +221,13 @@ internal fun SettingsSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            NuvioSectionLabel(text = title)
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = tokens.colors.textMuted,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.8.sp,
+            )
             Row(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
@@ -267,8 +274,12 @@ internal fun SettingsNavigationRow(
             if (icon != null || iconPainter != null) {
                 Surface(
                     modifier = Modifier.size(iconSize),
-                    color = tokens.colors.accent.copy(alpha = tokens.opacity.pressed),
-                    shape = tokens.shapes.compactCard,
+                    color = tokens.colors.textPrimary.copy(alpha = 0.07f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(
+                        tokens.borders.hairline,
+                        tokens.colors.textPrimary.copy(alpha = 0.10f),
+                    ),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize(),
@@ -286,7 +297,7 @@ internal fun SettingsNavigationRow(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = tokens.colors.accent,
+                                tint = tokens.colors.textPrimary,
                             )
                         }
                     }

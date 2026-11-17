@@ -51,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -883,11 +884,14 @@ private fun LibraryChip(
     val colorScheme = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(50))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        color = if (selected) colorScheme.primaryContainer else colorScheme.surfaceContainerLow,
-        border = if (selected) BorderStroke(1.dp, colorScheme.primary.copy(alpha = 0.45f)) else null,
+        shape = RoundedCornerShape(50),
+        color = if (selected) colorScheme.primary else Color.Transparent,
+        border = BorderStroke(
+            1.dp,
+            if (selected) colorScheme.primary else colorScheme.outlineVariant.copy(alpha = 0.7f),
+        ),
     ) {
         Text(
             text = label,
@@ -897,7 +901,7 @@ private fun LibraryChip(
             style = MaterialTheme.typography.labelMedium,
             color = when {
                 error -> colorScheme.error
-                selected -> colorScheme.onPrimaryContainer
+                selected -> colorScheme.onPrimary
                 else -> colorScheme.onSurfaceVariant
             },
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
@@ -919,13 +923,14 @@ private fun CloudLibraryRow(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable(enabled = playableCount > 0, onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
