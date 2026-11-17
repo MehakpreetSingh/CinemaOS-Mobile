@@ -422,11 +422,11 @@ internal fun CinemaosPlayerControls(
                                 }
                             }
                             if (onEpisodesClick != null) {
-                                PlayerAction(
-                                    description = stringResource(Res.string.compose_player_episodes),
+                                CinemaosEpisodesPill(
+                                    label = stringResource(Res.string.compose_player_episodes),
                                     onClick = { onInteraction(); onEpisodesClick() },
-                                    painter = appIconPainter(AppIconResource.PlayerEpisodes),
                                     tint = foreground,
+                                    showLabel = !compact,
                                 )
                             }
                             Row(

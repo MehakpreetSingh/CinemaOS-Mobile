@@ -232,7 +232,7 @@ internal class PlayerScreenRuntime(
     var linkCacheSourceUrl: String? = args.sourceUrl.takeIf { args.sourceFromLinkCache && it.isNotBlank() }
     /** URL picked by auto source selection; only this source falls back to the next match on failure. */
     var autoSelectedSourceUrl: String? = args.sourceUrl.takeIf { args.sourceAutoSelected && it.isNotBlank() }
-    var sourceFallbackAttempts = 0
+    var sourceFallbackAttempts by mutableStateOf(0)
     val sourceFallbackTriedKeys = mutableSetOf<String>()
     var sourceFallbackJob: Job? = null
 

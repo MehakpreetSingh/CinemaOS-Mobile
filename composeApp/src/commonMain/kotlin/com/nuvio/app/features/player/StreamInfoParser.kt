@@ -12,6 +12,7 @@ internal data class ParsedStreamInfo(
     val qualityLabel: String? = null,
     val sizeLabel: String? = null,
     val hdr: Boolean = false,
+    val hdr10: Boolean = false,
     val hdr10Plus: Boolean = false,
     val dolbyVision: Boolean = false,
     val atmos: Boolean = false,
@@ -19,6 +20,7 @@ internal data class ParsedStreamInfo(
     val channels: String? = null,
     val codec: String? = null,
     val tenBit: Boolean = false,
+    val imax: Boolean = false,
     val sourceType: String? = null,
     val languages: List<StreamLanguage> = emptyList(),
     val multiAudio: Boolean = false,
@@ -28,20 +30,24 @@ internal data class ParsedStreamInfo(
 private val RES_REGEX = Regex("""(?<![0-9])(2160|1440|1080|720|576|480|360)\s?[pi]\b""", RegexOption.IGNORE_CASE)
 private val UHD_REGEX = Regex("""\b(4k|uhd)\b""", RegexOption.IGNORE_CASE)
 private val SIZE_REGEX = Regex("""(\d+(?:[.,]\d+)?)\s?(GB|GiB|MB|MiB)\b""", RegexOption.IGNORE_CASE)
-private val DV_REGEX = Regex("""dolby[\s._-]?vision|\bDV\b|\bDoVi\b""", RegexOption.IGNORE_CASE)
-private val HDR10P_REGEX = Regex("""hdr10\s?(\+|plus)""", RegexOption.IGNORE_CASE)
-private val HDR_REGEX = Regex("""\bhdr(10)?\b""", RegexOption.IGNORE_CASE)
+private val DV_REGEX = Regex("""dolby[\s._-]?vision|\bDV\b|\bDoVi\b|\bDOVI\b""", RegexOption.IGNORE_CASE)
+private val HDR10P_REGEX = Regex("""\bhdr[\s._-]?10[\s._-]?(\+|plus|p\b)""", RegexOption.IGNORE_CASE)
+private val HDR10_REGEX = Regex("""\bhdr[\s._-]?10(?![0-9])""", RegexOption.IGNORE_CASE)
+private val HDR_REGEX = Regex("""\bhdr(?![a-z]|[\s._-]?10)""", RegexOption.IGNORE_CASE)
+private val IMAX_REGEX = Regex("""\bimax\b""", RegexOption.IGNORE_CASE)
 private val ATMOS_REGEX = Regex("""atmos""", RegexOption.IGNORE_CASE)
-private val DTS_REGEX = Regex("""\bdts(?:[\s._-]?(?:hd(?:[\s._-]?ma)?|x|es))?\b""", RegexOption.IGNORE_CASE)
-private val DD_REGEX = Regex("""\b(truehd|e-?ac-?3|dd\+|ddp|dd5|ac-?3|aac|flac|opus)""", RegexOption.IGNORE_CASE)
+private val DTS_REGEX = Regex("""\bdts(?:[\s._:-]?(?:hd(?:[\s._-]?ma)?|x|es))?(?![a-z0-9])""", RegexOption.IGNORE_CASE)
+private val DD_REGEX = Regex("""\b(true[\s._-]?hd|e-?ac-?3|dd\+|ddp|dd(?=[\s._-]?[0-9])|ac-?3|aac|flac|opus)""", RegexOption.IGNORE_CASE)
 private val CHANNEL_REGEX = Regex("""(?<![0-9])(7[.\s]1|5[.\s]1|2[.\s]0|2[.\s]1)(?![0-9])""")
+private val CHANNEL_CH_REGEX = Regex("""(?<![0-9])(8|6)\s?ch\b""", RegexOption.IGNORE_CASE)
 private val HEVC_REGEX = Regex("""\b(hevc|x265|h[.\s]?265)\b""", RegexOption.IGNORE_CASE)
 private val AVC_REGEX = Regex("""\b(avc|x264|h[.\s]?264)\b""", RegexOption.IGNORE_CASE)
 private val AV1_REGEX = Regex("""\bav1\b""", RegexOption.IGNORE_CASE)
-private val TENBIT_REGEX = Regex("""10[\s-]?bit""", RegexOption.IGNORE_CASE)
+private val TENBIT_REGEX = Regex("""\b10[\s._-]?bits?\b|\bhi10p?\b""", RegexOption.IGNORE_CASE)
 private val REMUX_REGEX = Regex("""\bremux\b""", RegexOption.IGNORE_CASE)
 private val BLURAY_REGEX = Regex("""blu[\s-]?ray|\bbdrip\b|\bbrrip\b""", RegexOption.IGNORE_CASE)
-private val WEBDL_REGEX = Regex("""web[\s._-]?dl|webrip|\bweb\b""", RegexOption.IGNORE_CASE)
+private val WEBDL_REGEX = Regex("""web[\s._-]?dl|\bweb\b""", RegexOption.IGNORE_CASE)
+private val WEBRIP_REGEX = Regex("""web[\s._-]?rip""", RegexOption.IGNORE_CASE)
 private val HDTV_REGEX = Regex("""\bhdtv\b""", RegexOption.IGNORE_CASE)
 private val CAM_REGEX = Regex("""\b(cam|hdcam|telesync|\bts\b|hdts)\b""", RegexOption.IGNORE_CASE)
 private val MULTI_REGEX = Regex("""multi[\s._-]?(audio|lang)|dual[\s._-]?audio|\bmulti\b""", RegexOption.IGNORE_CASE)
@@ -130,18 +136,27 @@ internal fun parseStreamInfo(texts: List<String?>, videoSizeBytes: Long? = null)
 
     val hdr10Plus = HDR10P_REGEX.containsMatchIn(text)
     val dv = DV_REGEX.containsMatchIn(text)
-    val hdr = HDR_REGEX.containsMatchIn(text)
+    val hdr10 = !hdr10Plus && HDR10_REGEX.containsMatchIn(text)
+    val hdr = !hdr10Plus && !hdr10 && HDR_REGEX.containsMatchIn(text)
     val atmos = ATMOS_REGEX.containsMatchIn(text)
-    val audioFormat = DTS_REGEX.find(text)?.value?.uppercase()?.replace(Regex("""[\s._]+"""), "-")
-        ?: DD_REGEX.find(text)?.value?.let { raw ->
-            when (raw.lowercase()) {
-                "truehd" -> "TrueHD"
-                "e-ac-3", "eac3", "dd+", "ddp" -> "DD+"
-                "ac3", "ac-3", "dd5" -> "DD"
-                else -> raw.uppercase()
-            }
+    val audioFormat = DTS_REGEX.find(text)?.value?.let { raw ->
+        val lower = raw.lowercase()
+        when {
+            lower.endsWith("x") && lower.length > 3 -> "DTS:X"
+            "hd" in lower -> "DTS-HD"
+            else -> "DTS"
         }
-    val channels = CHANNEL_REGEX.find(text)?.groupValues?.get(1)?.replace(' ', '.')
+    } ?: DD_REGEX.find(text)?.value?.let { raw ->
+        val lower = raw.lowercase().replace(Regex("""[\s._-]+"""), "")
+        when {
+            lower.startsWith("truehd") -> "TrueHD"
+            lower.startsWith("eac3") || lower.startsWith("dd+") || lower.startsWith("ddp") -> "DD+"
+            lower.startsWith("ac3") || lower.startsWith("dd") -> "DD"
+            else -> raw.uppercase()
+        }
+    }
+    val channels = CHANNEL_REGEX.find(text)?.groupValues?.get(1)?.replace(Regex("""\s"""), ".")
+        ?: CHANNEL_CH_REGEX.find(text)?.groupValues?.get(1)?.let { if (it == "8") "7.1" else "5.1" }
     val codec = when {
         AV1_REGEX.containsMatchIn(text) -> "AV1"
         HEVC_REGEX.containsMatchIn(text) -> "HEVC"
@@ -151,6 +166,7 @@ internal fun parseStreamInfo(texts: List<String?>, videoSizeBytes: Long? = null)
     val source = when {
         REMUX_REGEX.containsMatchIn(text) -> "REMUX"
         BLURAY_REGEX.containsMatchIn(text) -> "BluRay"
+        WEBRIP_REGEX.containsMatchIn(text) -> "WEBRip"
         WEBDL_REGEX.containsMatchIn(text) -> "WEB-DL"
         HDTV_REGEX.containsMatchIn(text) -> "HDTV"
         CAM_REGEX.containsMatchIn(text) -> "CAM"
@@ -170,7 +186,8 @@ internal fun parseStreamInfo(texts: List<String?>, videoSizeBytes: Long? = null)
         qualityHeight = height,
         qualityLabel = qualityLabel,
         sizeLabel = sizeLabel,
-        hdr = hdr && !hdr10Plus,
+        hdr = hdr,
+        hdr10 = hdr10,
         hdr10Plus = hdr10Plus,
         dolbyVision = dv,
         atmos = atmos,
@@ -178,6 +195,7 @@ internal fun parseStreamInfo(texts: List<String?>, videoSizeBytes: Long? = null)
         channels = channels,
         codec = codec,
         tenBit = TENBIT_REGEX.containsMatchIn(text),
+        imax = IMAX_REGEX.containsMatchIn(text),
         sourceType = source,
         languages = langs,
         multiAudio = multi,

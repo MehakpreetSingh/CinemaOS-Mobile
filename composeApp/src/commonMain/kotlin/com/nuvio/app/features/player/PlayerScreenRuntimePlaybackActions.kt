@@ -528,6 +528,15 @@ internal fun PlayerScreenRuntime.maybeFailoverPlaybackEngine(
     resolvedAutoEngine: AndroidPlaybackEngine?,
 ): Boolean {
     if (!playerSettingsUiState.autoSwitchPlaybackEngineOnError) return false
+    // CinemaOS: before playback starts, a failing auto-selected link moves to the next link
+    // (shown inside the player) instead of switching engines.
+    if (
+        playerSettingsUiState.streamAutoPlayFallbackActive &&
+        !initialLoadCompleted &&
+        activeSourceUrl.isNotBlank() &&
+        activeSourceUrl == autoSelectedSourceUrl &&
+        sourceFallbackAttempts < playerSettingsUiState.streamAutoPlayFallbackMaxSources
+    ) return false
     if (engineFailoverDisarmed) return false
     val sourceIdentity = activePlaybackIdentity
     if (engineFailoverSourceIdentity == sourceIdentity) return false
