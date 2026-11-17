@@ -168,18 +168,19 @@ internal fun StreamInfoChipRow(info: ParsedStreamInfo, modifier: Modifier = Modi
         if (info.hdr10) LabelBadge("HDR10", ChipTone.Accent)
         if (info.hdr) LabelBadge("HDR", ChipTone.Accent)
         if (info.atmos) DolbyBadge("ATMOS")
-        when (val audio = info.audioFormat) {
-            null -> Unit
-            "TrueHD" -> DolbyBadge("TRUEHD")
-            "DD+" -> DolbyBadge("DIGITAL+")
-            "DD" -> DolbyBadge("DIGITAL")
-            "DTS", "DTS-HD", "DTS:X" -> DtsBadge(audio)
-            else -> LabelBadge(audio)
+        info.audioFormats.forEach { audio ->
+            when (audio) {
+                "TrueHD" -> DolbyBadge("TRUEHD")
+                "DD+" -> DolbyBadge("DIGITAL+")
+                "DD" -> DolbyBadge("DIGITAL")
+                "DTS", "DTS-HD", "DTS:X" -> DtsBadge(audio)
+                else -> LabelBadge(audio)
+            }
         }
         info.channels?.let { ChannelsBadge(it) }
         info.codec?.let { LabelBadge(it) }
         if (info.tenBit) LabelBadge("10-BIT")
-        info.sourceType?.let { LabelBadge(it.uppercase()) }
+        info.sourceTypes.forEach { LabelBadge(it) }
         if (info.languages.isNotEmpty()) {
             info.languages.take(4).forEach { lang ->
                 LabelBadge("${lang.flag} ${lang.name}")

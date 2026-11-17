@@ -213,7 +213,8 @@ internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
     val targetMs = if (isPartyControlLocked) ownSeekTarget(requestedMs) ?: return else requestedMs
     lastManualSkipSeekPositions = fromMs to targetMs
     pendingSeekTarget = targetMs to TimeSource.Monotonic.markNow()
-    if (isPartySynced) playerController?.seekTo(targetMs) else playerController?.seekBy(offsetMs)
+    // Use the accumulated target: the engine position can lag behind a preceding seek.
+    playerController?.seekTo(targetMs)
     scheduleProgressSyncAfterSeek()
     publishPartyPlayback(positionMs = targetMs)
     controlsVisible = true

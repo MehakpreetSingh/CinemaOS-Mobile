@@ -1759,8 +1759,17 @@ private class NuvioLibmpvView(
         mpv.setOptionString("ytdl", "no").logIfMpvError("ytdl")
         mpv.setOptionString("tls-verify", "yes")
         mpv.setOptionString("tls-ca-file", "${context.filesDir.path}/cacert.pem")
-        mpv.setOptionString("demuxer-max-bytes", "${libmpvCacheBytes()}").logIfMpvError("demuxer-max-bytes")
-        mpv.setOptionString("demuxer-max-back-bytes", "${libmpvCacheBytes()}").logIfMpvError("demuxer-max-back-bytes")
+        val bufferProfile = NuvioExoPlayerPerformanceHelper.streamingBufferProfile(context)
+        // Keep most packet memory ahead of playback. A small back cache preserves nearby seeks.
+        mpv.setOptionString("demuxer-max-bytes", "${bufferProfile.forwardMb}MiB").logIfMpvError("demuxer-max-bytes")
+        mpv.setOptionString("demuxer-max-back-bytes", "${bufferProfile.backMb}MiB").logIfMpvError("demuxer-max-back-bytes")
+        mpv.setOptionString("cache", "auto").logIfMpvError("cache")
+        mpv.setOptionString("cache-secs", "90").logIfMpvError("cache-secs")
+        mpv.setOptionString("cache-pause", "yes").logIfMpvError("cache-pause")
+        // MPV's one-second default can repeatedly resume into an empty cache on uneven links.
+        mpv.setOptionString("cache-pause-wait", "5").logIfMpvError("cache-pause-wait")
+        mpv.setOptionString("cache-pause-initial", "yes").logIfMpvError("cache-pause-initial")
+        mpv.setOptionString("network-timeout", "30").logIfMpvError("network-timeout")
         // Room above 100% for the player's amplification (+10 dB is about 316%).
         mpv.setOptionString("volume-max", "$LIBMPV_MAX_VOLUME_PERCENT").logIfMpvError("volume-max")
         mpv.setOptionString("vd-lavc-film-grain", "cpu")
@@ -2253,9 +2262,6 @@ private data class LibmpvTrack(
 )
 
 private const val LIBMPV_MAX_VOLUME_PERCENT = 400
-
-private fun libmpvCacheBytes(): Int =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) 64 * 1024 * 1024 else 32 * 1024 * 1024
 
 private fun Int.logIfMpvError(option: String) {
     if (this < 0) Log.w(TAG, "libmpv option failed: $option status=$this")

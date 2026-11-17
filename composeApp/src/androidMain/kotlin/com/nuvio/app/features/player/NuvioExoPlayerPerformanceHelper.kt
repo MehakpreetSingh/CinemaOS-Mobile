@@ -13,9 +13,6 @@ import androidx.media3.exoplayer.upstream.DefaultAllocator
 internal object NuvioExoPlayerPerformanceHelper {
     const val ALLOCATOR_SEGMENT_SIZE = 64 * 1024
     const val NATIVE_ARENA_CHUNK_SIZE = 64 * 1024
-    private const val MIN_BUFFER_MB = 25
-    private const val MIN_BUFFER_MS = 15_000
-    private const val MAX_BUFFER_MS = 45_000
     private const val BUFFER_FOR_PLAYBACK_MS = 2_500
     private const val LOCAL_FILE_MIN_BUFFER_MS = 5_000
     private const val LOCAL_FILE_MAX_BUFFER_MS = 15_000
@@ -93,27 +90,38 @@ internal object NuvioExoPlayerPerformanceHelper {
         if (bufferSettings.enabled) {
             return buildCustomLoadControl(context, bufferSettings)
         }
-        if (!enabled) {
-            // Same buffer profile as the CinemaOS phone / TV apps: start after 2.5 s, rebuffer 5 s, no back buffer.
-            return DefaultLoadControl.Builder()
-                .setBackBuffer(PlaybackBufferSettings.DEFAULT_BACK_BUFFER_MS, true)
-                .setBufferDurationsMs(
-                    PlaybackBufferSettings.DEFAULT_MIN_BUFFER_MS,
-                    PlaybackBufferSettings.DEFAULT_MAX_BUFFER_MS,
-                    PlaybackBufferSettings.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                    PlaybackBufferSettings.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
-                )
-                .build()
+        val profile = streamingBufferProfile(context)
+        val targetBufferMb = if (enabled) profile.forwardMb else {
+            // Leave heap for Compose, artwork, tracks and the decoder as well as media packets.
+            profile.forwardMb.coerceAtMost((Runtime.getRuntime().maxMemory() / (4L * 1024L * 1024L)).toInt())
+                .coerceAtLeast(16)
         }
+        val minMs = if (profile.lowMemory) 15_000 else 30_000
+        val maxMs = if (profile.lowMemory) 30_000 else 90_000
+        if (enabled) {
+            return nativeLoadControl(
+                targetBufferMb = targetBufferMb,
+                minBufferMs = minMs,
+                maxBufferMs = maxMs,
+                bufferForPlaybackMs = BUFFER_FOR_PLAYBACK_MS,
+                bufferForPlaybackAfterRebufferMs = 5_000,
+                backBufferMs = 0,
+            )
+        }
+        return DefaultLoadControl.Builder()
+            .setTargetBufferBytes(targetBufferMb * 1024 * 1024)
+            .setBufferDurationsMs(minMs, maxMs, BUFFER_FOR_PLAYBACK_MS, 5_000)
+            // The memory budget must win for high bitrate files on small heaps.
+            .setPrioritizeTimeOverSizeThresholds(false)
+            .setBackBuffer(0, false)
+            .build()
+    }
 
-        val targetBufferMb = getSafeNativeMemoryLimitMb(context).coerceAtLeast(MIN_BUFFER_MB)
-        return nativeLoadControl(
-            targetBufferMb = targetBufferMb,
-            minBufferMs = MIN_BUFFER_MS,
-            maxBufferMs = MAX_BUFFER_MS,
-            bufferForPlaybackMs = BUFFER_FOR_PLAYBACK_MS,
-            bufferForPlaybackAfterRebufferMs = BUFFER_FOR_PLAYBACK_MS,
-            backBufferMs = PlaybackBufferSettings.DEFAULT_BACK_BUFFER_MS,
+    fun streamingBufferProfile(context: Context): StreamingBufferProfile {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        return StreamingBufferProfile.forDevice(
+            ramMb = deviceRamBytes(context) / (1024L * 1024L),
+            lowRamDevice = manager?.isLowRamDevice ?: false,
         )
     }
 

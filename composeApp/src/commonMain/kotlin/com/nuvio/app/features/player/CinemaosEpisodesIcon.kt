@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,10 +19,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 private const val EPISODES_FRONT_CARD_PATH =
     "M5 6.6h14a3.4 3.4 0 0 1 3.4 3.4v7.6a3.4 3.4 0 0 1-3.4 3.4H5a3.4 3.4 0 0 1-3.4-3.4V10A3.4 3.4 0 0 1 5 6.6z" +
@@ -61,6 +59,7 @@ internal fun CinemaosEpisodesPill(
     onClick: () -> Unit,
     tint: Color,
     showLabel: Boolean = true,
+    labelStyle: TextStyle,
 ) {
     Row(
         modifier = Modifier
@@ -75,14 +74,13 @@ internal fun CinemaosEpisodesPill(
             imageVector = CinemaosEpisodesIcon,
             contentDescription = label,
             tint = tint,
-            modifier = Modifier.size(if (showLabel) 30.dp else 28.dp),
+            modifier = Modifier.size(24.dp),
         )
         if (showLabel) {
             Text(
                 text = label,
                 color = tint.copy(alpha = 0.92f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
+                style = labelStyle,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis,

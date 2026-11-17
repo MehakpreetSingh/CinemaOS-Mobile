@@ -94,6 +94,16 @@ jobs:
             echo "NUVIO_RELEASE_KEY_PASSWORD=$keypass"
           } >> local.properties
 
+      - name: Test playback profiles and source badges
+        run: |
+          ./gradlew :composeApp:testAndroidHostTest \
+            --tests '*StreamingBufferProfileTest' \
+            --tests '*StreamInfoParserTest' \
+            -Pnuvio.android.distribution=full \
+            -Pnuvio.ios.distribution=appstore \
+            -Dorg.gradle.jvmargs="-Xmx5g -Dfile.encoding=UTF-8" \
+            --stacktrace
+
       - name: Build APK
         env:
           BUILD_TYPE: ${{ inputs.build_type }}

@@ -165,6 +165,7 @@ internal fun CinemaosPlayerControls(
         val compact = containerWidth < 600.dp
         val headerButton = metrics.headerIconSize + 16.dp
         val sideInset = metrics.horizontalPadding
+        val bottomTextStyle = typeScale.bodyMd.copy(fontSize = (metrics.timeSize.value + 2).sp)
 
         Box(
             modifier = Modifier
@@ -439,7 +440,7 @@ internal fun CinemaosPlayerControls(
                                 if (!compact) {
                                     Text(
                                         text = formatPlaybackRuntime(displayedPositionMs, playbackSnapshot.durationMs, false),
-                                        style = typeScale.bodyMd.copy(fontSize = (metrics.timeSize.value + 2).sp),
+                                        style = bottomTextStyle,
                                         color = foreground.copy(alpha = 0.9f),
                                         maxLines = 1,
                                         modifier = Modifier.padding(start = 8.dp),
@@ -452,6 +453,7 @@ internal fun CinemaosPlayerControls(
                                     onClick = { onInteraction(); onEpisodesClick() },
                                     tint = foreground,
                                     showLabel = !compact,
+                                    labelStyle = bottomTextStyle,
                                 )
                             }
                             Row(

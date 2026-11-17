@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,6 +20,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.NuvioStatusModal
+import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.core.ui.LocalFold
 import com.nuvio.app.features.p2p.P2pStreamingState
@@ -307,9 +310,22 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
             displayedPositionMs = displayedPositionMs,
             isEpisode = isEpisode,
             folded = fold != null,
+            initialLoadingMessage = p2pInitialLoadingMessage,
             modifier = panelModifier,
         )
         Box(modifier = videoModifier) {
+            // Controls can auto-hide or be locked while the engine is seeking/buffering.
+            // Keep loading feedback on the video surface in either case.
+            val hasPlaybackSource = activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null
+            val awaitingInitialPlayback = !initialLoadCompleted && hasPlaybackSource
+            if (!isInPip && errorMessage == null && hasPlaybackSource &&
+                (playbackSnapshot.isLoading || awaitingInitialPlayback) &&
+                (playerControlsLocked || (!controlsVisible && !awaitingInitialPlayback && fold == null))
+            ) {
+                NuvioLoadingIndicator(
+                    modifier = Modifier.align(Alignment.Center).size(metrics.playIconSize + 20.dp),
+                )
+            }
             RenderPlaybackOverlays(
                 runtime = runtime,
                 displayedPositionMs = displayedPositionMs,
@@ -362,13 +378,15 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
     displayedPositionMs: Long,
     isEpisode: Boolean,
     folded: Boolean,
+    initialLoadingMessage: String?,
     modifier: Modifier,
 ) {
     val isInPip = rememberIsInPictureInPicture()
     val partyState by PartyRepository.state.collectAsStateWithLifecycle()
     val partyActive = partyState.party != null
     val playerBadges = rememberPlayerBadges()
-    val awaitingFirstFrame = activeSourceUrl.isNotBlank() && !initialLoadCompleted && errorMessage == null
+    val awaitingFirstFrame = (activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null) &&
+        !initialLoadCompleted && errorMessage == null
     LaunchedEffect(folded) {
         if (folded) {
             controlsVisible = true
@@ -407,8 +425,16 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
             onInteraction = { controlsActivityTick += 1 },
             showPlaybackControls = controlsVisible || awaitingFirstFrame,
             awaitingFirstFrame = awaitingFirstFrame,
-            loadingMessage = if (sourceFallbackAttempts > 0 && !initialLoadCompleted) {
-                stringResource(Res.string.player_loading_trying_next_source, sourceFallbackAttempts)
+            loadingMessage = if (playerSettingsUiState.showPlayerLoadingStatus && awaitingFirstFrame) {
+                if (sourceFallbackAttempts > 0) {
+                    stringResource(Res.string.player_loading_trying_next_source, sourceFallbackAttempts)
+                } else {
+                    initialLoadingMessage ?: playerLoadingStatusMessage(
+                        showStatus = true,
+                        controllerReady = playerController != null,
+                        snapshot = playbackSnapshot,
+                    )
+                }
             } else null,
             onLockToggle = {
                 if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
@@ -564,7 +590,7 @@ private fun BoxScope.RenderPlaybackOverlays(
         horizontalSafePadding = horizontalSafePadding,
         onUnlock = { unlockPlayerControls() },
         showOpeningOverlay = playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null &&
-            (activeSourceUrl.isBlank() || activeTorrentInfoHash != null),
+            activeSourceUrl.isBlank() && activeTorrentInfoHash == null,
         backdropArtwork = background ?: poster,
         logo = logo,
         title = title,
