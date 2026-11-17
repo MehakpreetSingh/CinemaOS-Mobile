@@ -1,6 +1,7 @@
 package com.nuvio.app.features.player
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.nuvio.app.features.details.MetaDetailsUiState
 import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.downloads.DownloadsRepository
@@ -60,6 +61,8 @@ internal fun PlayerScreenModalHosts(
     onVideoSettingsChanged: () -> Unit,
     onVideoSettingsModalDismissed: () -> Unit,
     showSourcesPanel: Boolean,
+    showQualityPanel: Boolean,
+    onQualityPanelDismissed: () -> Unit,
     sourceStreamsState: StreamsUiState,
     contentTitle: String,
     activeEpisodeTitle: String?,
@@ -124,9 +127,16 @@ internal fun PlayerScreenModalHosts(
         )
     }
 
+    val detectedAudioLanguages = remember(currentStream) {
+        parseStreamInfo(listOf(currentStream.name, currentStream.description, currentStream.filename)).languages
+    }
+    val labeledAudioTracks = remember(audioTracks, detectedAudioLanguages) {
+        labelAudioTracksWithLanguages(audioTracks, detectedAudioLanguages)
+    }
+
     AudioTrackModal(
         visible = showAudioModal,
-        audioTracks = audioTracks,
+        audioTracks = labeledAudioTracks,
         selectedIndex = selectedAudioIndex,
         onTrackSelected = onAudioTrackSelected,
         onDismiss = onAudioModalDismissed,
@@ -173,6 +183,14 @@ internal fun PlayerScreenModalHosts(
         settings = playerSettings,
         onSettingsChanged = onVideoSettingsChanged,
         onDismiss = onVideoSettingsModalDismissed,
+    )
+
+    PlayerQualityPanel(
+        visible = showQualityPanel,
+        streamsUiState = sourceStreamsState,
+        currentStream = currentStream,
+        onStreamSelected = onSourceStreamSelected,
+        onDismiss = onQualityPanelDismissed,
     )
 
     PlayerSourcesPanel(

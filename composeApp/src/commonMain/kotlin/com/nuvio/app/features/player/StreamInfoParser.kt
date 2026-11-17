@@ -1,0 +1,237 @@
+package com.nuvio.app.features.player
+
+import com.nuvio.app.features.streams.StreamItem
+import kotlin.math.round
+
+/** One detected audio language, with a display name and a flag emoji. */
+internal data class StreamLanguage(val name: String, val flag: String)
+
+/** Structured facts read from a stream's name, title, description and filename. */
+internal data class ParsedStreamInfo(
+    val qualityHeight: Int = 0,
+    val qualityLabel: String? = null,
+    val sizeLabel: String? = null,
+    val hdr: Boolean = false,
+    val hdr10Plus: Boolean = false,
+    val dolbyVision: Boolean = false,
+    val atmos: Boolean = false,
+    val audioFormat: String? = null,
+    val channels: String? = null,
+    val codec: String? = null,
+    val tenBit: Boolean = false,
+    val sourceType: String? = null,
+    val languages: List<StreamLanguage> = emptyList(),
+    val multiAudio: Boolean = false,
+    val releaseKey: String = "",
+)
+
+private val RES_REGEX = Regex("""(?<![0-9])(2160|1440|1080|720|576|480|360)\s?[pi]\b""", RegexOption.IGNORE_CASE)
+private val UHD_REGEX = Regex("""\b(4k|uhd)\b""", RegexOption.IGNORE_CASE)
+private val SIZE_REGEX = Regex("""(\d+(?:[.,]\d+)?)\s?(GB|GiB|MB|MiB)\b""", RegexOption.IGNORE_CASE)
+private val DV_REGEX = Regex("""dolby[\s._-]?vision|\bDV\b|\bDoVi\b""", RegexOption.IGNORE_CASE)
+private val HDR10P_REGEX = Regex("""hdr10\s?(\+|plus)""", RegexOption.IGNORE_CASE)
+private val HDR_REGEX = Regex("""\bhdr(10)?\b""", RegexOption.IGNORE_CASE)
+private val ATMOS_REGEX = Regex("""atmos""", RegexOption.IGNORE_CASE)
+private val DTS_REGEX = Regex("""\bdts(?:[\s._-]?(?:hd(?:[\s._-]?ma)?|x|es))?\b""", RegexOption.IGNORE_CASE)
+private val DD_REGEX = Regex("""\b(truehd|e-?ac-?3|dd\+|ddp|dd5|ac-?3|aac|flac|opus)""", RegexOption.IGNORE_CASE)
+private val CHANNEL_REGEX = Regex("""(?<![0-9])(7[.\s]1|5[.\s]1|2[.\s]0|2[.\s]1)(?![0-9])""")
+private val HEVC_REGEX = Regex("""\b(hevc|x265|h[.\s]?265)\b""", RegexOption.IGNORE_CASE)
+private val AVC_REGEX = Regex("""\b(avc|x264|h[.\s]?264)\b""", RegexOption.IGNORE_CASE)
+private val AV1_REGEX = Regex("""\bav1\b""", RegexOption.IGNORE_CASE)
+private val TENBIT_REGEX = Regex("""10[\s-]?bit""", RegexOption.IGNORE_CASE)
+private val REMUX_REGEX = Regex("""\bremux\b""", RegexOption.IGNORE_CASE)
+private val BLURAY_REGEX = Regex("""blu[\s-]?ray|\bbdrip\b|\bbrrip\b""", RegexOption.IGNORE_CASE)
+private val WEBDL_REGEX = Regex("""web[\s._-]?dl|webrip|\bweb\b""", RegexOption.IGNORE_CASE)
+private val HDTV_REGEX = Regex("""\bhdtv\b""", RegexOption.IGNORE_CASE)
+private val CAM_REGEX = Regex("""\b(cam|hdcam|telesync|\bts\b|hdts)\b""", RegexOption.IGNORE_CASE)
+private val MULTI_REGEX = Regex("""multi[\s._-]?(audio|lang)|dual[\s._-]?audio|\bmulti\b""", RegexOption.IGNORE_CASE)
+private val BRACKET_REGEX = Regex("""[\[(]([^\])]{2,40})[\])]""")
+private val SPLIT_REGEX = Regex("""[\s,/+&|._-]+""")
+
+private data class LangDef(val name: String, val flag: String, val words: List<String>, val codes: List<String>)
+
+private val LANGS = listOf(
+    LangDef("English", "🇬🇧", listOf("english"), listOf("eng", "en")),
+    LangDef("Hindi", "🇮🇳", listOf("hindi"), listOf("hin", "hi")),
+    LangDef("Tamil", "🇮🇳", listOf("tamil"), listOf("tam", "ta")),
+    LangDef("Telugu", "🇮🇳", listOf("telugu"), listOf("tel", "te")),
+    LangDef("Malayalam", "🇮🇳", listOf("malayalam"), listOf("mal", "ml")),
+    LangDef("Kannada", "🇮🇳", listOf("kannada"), listOf("kan", "kn")),
+    LangDef("Bengali", "🇧🇩", listOf("bengali", "bangla"), listOf("ben", "bn")),
+    LangDef("Punjabi", "🇮🇳", listOf("punjabi"), listOf("pun", "pa")),
+    LangDef("Marathi", "🇮🇳", listOf("marathi"), listOf("mar", "mr")),
+    LangDef("Spanish", "🇪🇸", listOf("spanish", "espanol", "latino"), listOf("spa", "es")),
+    LangDef("French", "🇫🇷", listOf("french", "francais"), listOf("fre", "fra", "fr")),
+    LangDef("German", "🇩🇪", listOf("german", "deutsch"), listOf("ger", "deu", "de")),
+    LangDef("Italian", "🇮🇹", listOf("italian", "italiano"), listOf("ita", "it")),
+    LangDef("Portuguese", "🇧🇷", listOf("portuguese"), listOf("por", "pt")),
+    LangDef("Russian", "🇷🇺", listOf("russian"), listOf("rus", "ru")),
+    LangDef("Japanese", "🇯🇵", listOf("japanese"), listOf("jpn", "jap", "ja")),
+    LangDef("Korean", "🇰🇷", listOf("korean"), listOf("kor", "ko")),
+    LangDef("Chinese", "🇨🇳", listOf("chinese", "mandarin", "cantonese"), listOf("chi", "zho", "zh")),
+    LangDef("Arabic", "🇸🇦", listOf("arabic"), listOf("ara", "ar")),
+    LangDef("Turkish", "🇹🇷", listOf("turkish"), listOf("tur", "tr")),
+    LangDef("Thai", "🇹🇭", listOf("thai"), listOf("tha", "th")),
+    LangDef("Indonesian", "🇮🇩", listOf("indonesian"), listOf("ind", "id")),
+    LangDef("Polish", "🇵🇱", listOf("polish"), listOf("pol", "pl")),
+    LangDef("Dutch", "🇳🇱", listOf("dutch"), listOf("dut", "nld", "nl")),
+)
+
+private val WORD_REGEXES: List<Pair<LangDef, Regex>> = LANGS.map { def ->
+    def to Regex("""\b(${def.words.joinToString("|")})\b""", RegexOption.IGNORE_CASE)
+}
+
+internal fun detectStreamLanguages(text: String): List<StreamLanguage> {
+    val found = LinkedHashMap<String, Pair<Int, LangDef>>()
+    for ((def, regex) in WORD_REGEXES) {
+        val m = regex.find(text) ?: continue
+        found[def.name] = m.range.first to def
+    }
+    // Short codes are only trusted inside brackets such as [Hin-Eng] or (hi, en).
+    for (bracket in BRACKET_REGEX.findAll(text)) {
+        val parts = bracket.groupValues[1].split(SPLIT_REGEX).filter { it.isNotBlank() }
+        if (parts.size < 2 && parts.firstOrNull()?.length != 3) continue
+        var offset = bracket.range.first
+        for (part in parts) {
+            val lower = part.lowercase()
+            val def = LANGS.firstOrNull { lower in it.codes && (lower.length == 3 || parts.size >= 2) }
+            if (def != null && def.name !in found) found[def.name] = offset to def
+            offset++
+        }
+    }
+    return found.values.sortedBy { it.first }.map { StreamLanguage(it.second.name, it.second.flag) }
+}
+
+private fun formatSize(bytes: Long): String {
+    val gib = bytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+    return if (gib >= 1.0) {
+        "${round(gib * 10.0) / 10.0} GB"
+    } else {
+        "${round(bytes.toDouble() / (1024.0 * 1024.0)).toInt()} MB"
+    }
+}
+
+internal fun parseStreamInfo(texts: List<String?>, videoSizeBytes: Long? = null): ParsedStreamInfo {
+    val text = texts.filterNotNull().filter { it.isNotBlank() }.joinToString(" \n ")
+    if (text.isBlank() && videoSizeBytes == null) return ParsedStreamInfo()
+
+    val height = RES_REGEX.find(text)?.groupValues?.get(1)?.toIntOrNull()
+        ?: if (UHD_REGEX.containsMatchIn(text)) 2160 else 0
+    val qualityLabel = when {
+        height == 0 -> null
+        height >= 2160 -> "4K"
+        else -> "${height}p"
+    }
+    val sizeLabel = videoSizeBytes?.takeIf { it > 0 }?.let(::formatSize)
+        ?: SIZE_REGEX.find(text)?.let { m ->
+            val unit = if (m.groupValues[2].startsWith("g", ignoreCase = true)) "GB" else "MB"
+            "${m.groupValues[1].replace(',', '.')} $unit"
+        }
+
+    val hdr10Plus = HDR10P_REGEX.containsMatchIn(text)
+    val dv = DV_REGEX.containsMatchIn(text)
+    val hdr = HDR_REGEX.containsMatchIn(text)
+    val atmos = ATMOS_REGEX.containsMatchIn(text)
+    val audioFormat = DTS_REGEX.find(text)?.value?.uppercase()?.replace(Regex("""[\s._]+"""), "-")
+        ?: DD_REGEX.find(text)?.value?.let { raw ->
+            when (raw.lowercase()) {
+                "truehd" -> "TrueHD"
+                "e-ac-3", "eac3", "dd+", "ddp" -> "DD+"
+                "ac3", "ac-3", "dd5" -> "DD"
+                else -> raw.uppercase()
+            }
+        }
+    val channels = CHANNEL_REGEX.find(text)?.groupValues?.get(1)?.replace(' ', '.')
+    val codec = when {
+        AV1_REGEX.containsMatchIn(text) -> "AV1"
+        HEVC_REGEX.containsMatchIn(text) -> "HEVC"
+        AVC_REGEX.containsMatchIn(text) -> "H.264"
+        else -> null
+    }
+    val source = when {
+        REMUX_REGEX.containsMatchIn(text) -> "REMUX"
+        BLURAY_REGEX.containsMatchIn(text) -> "BluRay"
+        WEBDL_REGEX.containsMatchIn(text) -> "WEB-DL"
+        HDTV_REGEX.containsMatchIn(text) -> "HDTV"
+        CAM_REGEX.containsMatchIn(text) -> "CAM"
+        else -> null
+    }
+    val langs = detectStreamLanguages(text)
+    val multi = MULTI_REGEX.containsMatchIn(text)
+
+    val key = text.lowercase()
+        .replace(RES_REGEX, " ")
+        .replace(UHD_REGEX, " ")
+        .replace(SIZE_REGEX, " ")
+        .replace(Regex("""[^a-z0-9]+"""), " ")
+        .trim()
+
+    return ParsedStreamInfo(
+        qualityHeight = height,
+        qualityLabel = qualityLabel,
+        sizeLabel = sizeLabel,
+        hdr = hdr && !hdr10Plus,
+        hdr10Plus = hdr10Plus,
+        dolbyVision = dv,
+        atmos = atmos,
+        audioFormat = audioFormat,
+        channels = channels,
+        codec = codec,
+        tenBit = TENBIT_REGEX.containsMatchIn(text),
+        sourceType = source,
+        languages = langs,
+        multiAudio = multi,
+        releaseKey = key,
+    )
+}
+
+internal fun StreamItem.parsedInfo(): ParsedStreamInfo = parseStreamInfo(
+    texts = listOf(name, title, description, behaviorHints.filename ?: clientResolve?.filename),
+    videoSizeBytes = behaviorHints.videoSize,
+)
+
+/**
+ * Streams that are the same release as [current] at other qualities: same add-on and the same
+ * name once resolution and size tokens are removed. Sorted best quality first, one per quality.
+ */
+internal fun qualityVariantsOf(
+    streams: List<StreamItem>,
+    current: PlayerCurrentStream,
+): List<Pair<StreamItem, ParsedStreamInfo>> {
+    val currentInfo = parseStreamInfo(listOf(current.name, current.description, current.filename))
+    val sameAddon = streams.filter { current.addonId.isNullOrBlank() || it.addonId == current.addonId }
+    val currentIndex = streams.currentPlayerStreamIndex(current)
+    val currentKey = if (currentIndex >= 0) streams[currentIndex].parsedInfo().releaseKey else currentInfo.releaseKey
+    val parsed = sameAddon.filter { it.playableDirectUrl != null || it.hasPlayableSource }.map { it to it.parsedInfo() }
+    val matching = parsed.filter { (_, info) -> info.releaseKey == currentKey }
+    val pool = if (matching.size > 1) matching else parsed.filter { it.second.qualityHeight > 0 }
+    return pool
+        .groupBy { it.second.qualityHeight }
+        .map { (_, list) -> list.first() }
+        .sortedByDescending { it.second.qualityHeight }
+}
+
+private val GENERIC_TRACK_LABEL = Regex("""^\s*(audio|track|stream)?\s*#?\s*\d*\s*$""", RegexOption.IGNORE_CASE)
+
+/**
+ * Adds the languages named by the selected link to the engine's audio tracks. A track with a
+ * real language keeps it; a generic or unlabeled track takes the parsed language at the same
+ * position (links list languages in track order).
+ */
+internal fun labelAudioTracksWithLanguages(
+    tracks: List<AudioTrack>,
+    languages: List<StreamLanguage>,
+): List<AudioTrack> {
+    if (tracks.isEmpty() || languages.isEmpty()) return tracks
+    return tracks.mapIndexed { position, track ->
+        val lang = languages.getOrNull(position) ?: return@mapIndexed track
+        val hasLanguage = !track.language.isNullOrBlank() && !track.language.equals("und", ignoreCase = true)
+        val label = track.label
+        when {
+            label.isBlank() || GENERIC_TRACK_LABEL.matches(label) -> track.copy(label = "${lang.flag} ${lang.name}")
+            !hasLanguage && !label.contains(lang.name, ignoreCase = true) ->
+                track.copy(label = "$label · ${lang.flag} ${lang.name}")
+            else -> track
+        }
+    }
+}

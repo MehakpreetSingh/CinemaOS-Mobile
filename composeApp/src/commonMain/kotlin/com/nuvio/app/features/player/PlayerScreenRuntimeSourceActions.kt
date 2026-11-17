@@ -95,6 +95,7 @@ internal fun PlayerScreenRuntime.openExternalSourceUrl(stream: StreamItem): Bool
     val openExternalUrl = args.onOpenExternalUrl ?: return false
     openExternalUrl(url)
     showSourcesPanel = false
+    showQualityPanel = false
     showEpisodesPanel = false
     showChaptersPanel = false
     controlsVisible = true
@@ -255,6 +256,7 @@ internal fun PlayerScreenRuntime.switchToP2pSourceStream(stream: StreamItem) {
     activeInitialPositionMs = currentPositionMs
     activeInitialProgressFraction = null
     showSourcesPanel = false
+    showQualityPanel = false
     controlsVisible = true
     PlayerStreamsRepository.pauseSearchForPlayback()
 }
@@ -363,6 +365,7 @@ internal fun PlayerScreenRuntime.switchToSource(
     activeInitialPositionMs = currentPositionMs
     activeInitialProgressFraction = null
     showSourcesPanel = false
+    showQualityPanel = false
     controlsVisible = true
     PlayerStreamsRepository.pauseSearchForPlayback()
 }
@@ -563,6 +566,22 @@ internal fun PlayerScreenRuntime.openSourcesPanel() {
     controlsVisible = false
 }
 
+internal fun PlayerScreenRuntime.openQualityPanel() {
+    val vid = activeVideoId ?: return
+    // Same loader as the sources panel, so the quality list is the same set of links.
+    PlayerStreamsRepository.loadSources(
+        type = contentType ?: parentMetaType,
+        videoId = vid,
+        season = activeSeasonNumber,
+        episode = activeEpisodeNumber,
+    )
+    showQualityPanel = true
+    showSourcesPanel = false
+    showEpisodesPanel = false
+    showChaptersPanel = false
+    controlsVisible = false
+}
+
 internal fun PlayerScreenRuntime.openEpisodesPanel() {
     if (playerMetaVideos.isEmpty()) {
         scope.launch {
@@ -580,6 +599,7 @@ private data class EpisodeResume(val positionMs: Long, val fraction: Float?)
 private fun PlayerScreenRuntime.resetEpisodePanelAndNextEpisodeState() {
     showNextEpisodeCard = false
     showSourcesPanel = false
+    showQualityPanel = false
     showEpisodesPanel = false
     showChaptersPanel = false
     episodeStreamsPanelState = EpisodeStreamsPanelState()

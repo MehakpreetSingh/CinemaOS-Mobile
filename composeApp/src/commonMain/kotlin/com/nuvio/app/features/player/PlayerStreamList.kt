@@ -21,13 +21,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.features.debrid.DebridSettingsRepository
 import com.nuvio.app.features.streams.LocalStreamSizeLabelFormat
-import com.nuvio.app.features.streams.StreamBadgeSettingsRepository
-import com.nuvio.app.features.streams.StreamCard
+import com.nuvio.app.features.streams.LocalStreamHighlight
 import com.nuvio.app.features.streams.StreamCardSkeleton
 import com.nuvio.app.features.streams.StreamItem
 import com.nuvio.app.features.streams.StreamsUiState
@@ -54,10 +53,6 @@ internal fun PlayerStreamList(
     val debridSettings by remember {
         DebridSettingsRepository.ensureLoaded()
         DebridSettingsRepository.uiState
-    }.collectAsStateWithLifecycle()
-    val streamBadgeSettings by remember {
-        StreamBadgeSettingsRepository.ensureLoaded()
-        StreamBadgeSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
     val streams = streamsUiState.allStreams
     val visibleGroups = streamsUiState.filteredGroups
@@ -100,7 +95,7 @@ internal fun PlayerStreamList(
             ) {
                 Text(
                     text = error ?: stringResource(Res.string.compose_player_no_streams_found),
-                    color = Color.White.copy(alpha = if (error == null) 0.7f else 0.85f),
+                    color = MaterialTheme.nuvio.colors.textSecondary,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -118,6 +113,7 @@ internal fun PlayerStreamList(
                 scrolledToCurrent = true
                 listState.scrollToItem(currentStreamIndex)
             }
+            val highlight = LocalStreamHighlight.current
             val formatStreamSize = rememberStreamSizeLabelFormat()
             CompositionLocalProvider(LocalStreamSizeLabelFormat provides formatStreamSize) {
             LazyColumn(
@@ -130,16 +126,12 @@ internal fun PlayerStreamList(
                     items = streams,
                     key = { index, _ -> streamKeys[index] },
                 ) { index, stream ->
-                    StreamCard(
+                    PlayerSourceCard(
                         stream = stream,
                         enabled = stream.isSelectableForPlayback(debridSettings.canResolvePlayableLinks),
-                        appendInstantServiceToDefaultName = debridSettings.canResolvePlayableLinks &&
-                            !debridSettings.hasCustomStreamFormatting,
-                        showFileSizeBadges = streamBadgeSettings.showFileSizeBadges,
-                        showAddonLogo = streamBadgeSettings.showAddonLogo,
-                        badgePlacement = streamBadgeSettings.badgePlacement,
                         isCurrent = index == currentStreamIndex,
                         currentLabel = currentLabel,
+                        partyLabel = if (index == currentStreamIndex) null else highlight(stream),
                         onClick = { onStreamSelected(stream) },
                     )
                 }

@@ -33,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Hd
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.Toc
 import androidx.compose.material.icons.rounded.Build
@@ -131,6 +132,8 @@ internal fun CinemaosPlayerControls(
     onSubtitleClick: () -> Unit,
     onAudioClick: () -> Unit,
     onSourcesClick: (() -> Unit)?,
+    onQualityClick: (() -> Unit)? = null,
+    qualityLabel: String? = null,
     onEpisodesClick: (() -> Unit)?,
     onChaptersClick: (() -> Unit)?,
     onSpeedClick: () -> Unit,
@@ -494,6 +497,7 @@ internal fun CinemaosPlayerControls(
             val speedValue = formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed)
             val sourcesLabel = stringResource(Res.string.compose_player_sources)
             val audioLabel = stringResource(Res.string.compose_player_audio)
+            val qualityMenuLabel = stringResource(Res.string.cinemaos_player_quality)
             val subtitlesLabel = stringResource(Res.string.compose_player_subtitles)
             val subtitleStyleLabel = stringResource(Res.string.cinemaos_player_subtitle_style)
             val chaptersLabel = stringResource(Res.string.compose_player_chapters)
@@ -514,6 +518,9 @@ internal fun CinemaosPlayerControls(
                 add(CinemaosMenuEntry(speedLabel, onSpeedClick, icon = Icons.Rounded.Speed, value = speedValue, keepOpen = true))
                 if (onSourcesClick != null) {
                     add(CinemaosMenuEntry(sourcesLabel, onSourcesClick, painter = sourcesPainter))
+                }
+                if (onQualityClick != null) {
+                    add(CinemaosMenuEntry(qualityMenuLabel, onQualityClick, icon = Icons.Rounded.Hd, value = qualityLabel))
                 }
                 add(CinemaosMenuEntry(audioLabel, onAudioClick, painter = audioPainter))
                 add(CinemaosMenuEntry(subtitlesLabel, onSubtitleClick, painter = subtitlesPainter))

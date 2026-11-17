@@ -440,6 +440,8 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
                 null
             },
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
+            onQualityClick = if (activeVideoId != null) { { openQualityPanel() } } else null,
+            qualityLabel = parseStreamInfo(listOf(activeStreamTitle, activeStreamSubtitle, activeSourceFilename)).qualityLabel,
             onEpisodesClick = if (isSeries) { { openEpisodesPanel() } } else null,
             chapters = chapters,
             onChaptersClick = if (chapters.isNotEmpty()) { { openChaptersPanel() } } else null,
@@ -732,6 +734,12 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         },
         onVideoSettingsModalDismissed = { showVideoSettingsModal = false },
         showSourcesPanel = showSourcesPanel,
+        showQualityPanel = showQualityPanel,
+        onQualityPanelDismissed = {
+            showQualityPanel = false
+            PlayerStreamsRepository.stopSourcesLoading()
+            controlsVisible = true
+        },
         sourceStreamsState = sourceStreamsState,
         contentTitle = title,
         activeEpisodeTitle = activeEpisodeTitle,
