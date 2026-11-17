@@ -101,7 +101,9 @@ jobs:
             --tests '*StreamInfoParserTest' \
             -Pnuvio.android.distribution=full \
             -Pnuvio.ios.distribution=appstore \
-            -Dorg.gradle.jvmargs="-Xmx5g -Dfile.encoding=UTF-8" \
+            -Dorg.gradle.jvmargs="-Xmx9g -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=1536m" \
+            -Pkotlin.daemon.jvmargs=-Xmx3g \
+            --max-workers=2 \
             --stacktrace
 
       - name: Build APK
@@ -116,6 +118,7 @@ jobs:
             -PversionNameOverride=${{ steps.version.outputs.name }} \
             -Dorg.gradle.jvmargs="-Xmx9g -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=1536m" \
             -Pkotlin.daemon.jvmargs=-Xmx3g \
+            --max-workers=2 \
             --stacktrace
 
       - name: Collect APKs
