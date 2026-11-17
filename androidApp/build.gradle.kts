@@ -38,11 +38,17 @@ val sentryOrg = envOrLocalProperty("SENTRY_ORG")
 val sentryProject = envOrLocalProperty("SENTRY_PROJECT")
 val sentryMappingUploadEnabled = sentryAuthToken != null && sentryOrg != null && sentryProject != null
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
-val releaseAppVersionName = providers.gradleProperty("nuvio.app.versionName").orNull
+val releaseAppVersionName = providers.gradleProperty("versionNameOverride").orNull
+    ?: providers.environmentVariable("VERSION_NAME_OVERRIDE").orNull?.takeIf { it.isNotBlank() }
+    ?: providers.gradleProperty("nuvio.app.versionName").orNull
     ?: readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
     ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
-val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
-    ?.toIntOrNull()
+val releaseAppVersionCode = (
+    providers.gradleProperty("versionCodeOverride").orNull
+        ?: providers.environmentVariable("VERSION_CODE_OVERRIDE").orNull?.takeIf { it.isNotBlank() }
+    )?.toIntOrNull()
+    ?: readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
+        ?.toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
 val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(':') }
 val buildsReleaseApks = requestedTaskNames.any {
@@ -66,7 +72,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.nuvio.app"
+        applicationId = "com.cinemaos.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = releaseAppVersionCode
@@ -147,7 +153,7 @@ android {
 
 androidComponents {
     onVariants(selector().withBuildType("debug")) { variant ->
-        variant.applicationId.set("com.nuviodebug.com")
+        variant.applicationId.set("com.cinemaos.app.dev")
     }
 }
 

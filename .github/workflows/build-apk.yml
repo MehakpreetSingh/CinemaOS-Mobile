@@ -1,0 +1,136 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: Build type
+        type: choice
+        options:
+          - release
+          - debug
+        default: release
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # versionCode = VERSION_CODE_BASE + run_number (upstream Nuvio is at 155).
+  VERSION_CODE_BASE: "1000"
+  VERSION_NAME_PREFIX: "1.0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Compute version
+        id: version
+        run: |
+          code=$((VERSION_CODE_BASE + GITHUB_RUN_NUMBER))
+          name="${VERSION_NAME_PREFIX}.${GITHUB_RUN_NUMBER}"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "Version $name ($code)"
+
+      - name: Prepare local properties
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          NUVIO_SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
+          NUVIO_SUPABASE_ANON_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          TRAKT_CLIENT_SECRET: ${{ secrets.TRAKT_CLIENT_SECRET }}
+          SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+          MDBLIST_CLIENT_ID: ${{ secrets.MDBLIST_CLIENT_ID }}
+          INTRODB_API_URL: ${{ secrets.INTRODB_API_URL }}
+        run: |
+          : > local.properties
+          echo "TMDB_API_KEY=$TMDB_API_KEY" >> local.properties
+          for name in NUVIO_SUPABASE_URL NUVIO_SUPABASE_ANON_KEY TRAKT_CLIENT_ID TRAKT_CLIENT_SECRET SIMKL_CLIENT_ID MDBLIST_CLIENT_ID INTRODB_API_URL; do
+            value="${!name}"
+            if [ -n "$value" ]; then
+              echo "$name=$value" >> local.properties
+            fi
+          done
+
+      - name: Prepare signing config
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+            store="$RUNNER_TEMP/release.jks"
+            alias="$KEY_ALIAS"
+            storepass="$KEYSTORE_PASSWORD"
+            keypass="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+            echo "Signing with the keystore from secrets"
+          else
+            store="$GITHUB_WORKSPACE/ci/cinemaos-debug.jks"
+            alias="cinemaos"
+            storepass="cinemaosdebug"
+            keypass="cinemaosdebug"
+            echo "No keystore secrets; falling back to the committed CI keystore"
+          fi
+          {
+            echo "NUVIO_RELEASE_STORE_FILE=$store"
+            echo "NUVIO_RELEASE_KEY_ALIAS=$alias"
+            echo "NUVIO_RELEASE_STORE_PASSWORD=$storepass"
+            echo "NUVIO_RELEASE_KEY_PASSWORD=$keypass"
+          } >> local.properties
+
+      - name: Build APK
+        env:
+          BUILD_TYPE: ${{ inputs.build_type }}
+        run: |
+          if [ "$BUILD_TYPE" = "debug" ]; then task=assembleFullDebug; else task=assembleFullRelease; fi
+          ./gradlew ":androidApp:$task" \
+            -Pnuvio.android.distribution=full \
+            -Pnuvio.ios.distribution=appstore \
+            -PversionCodeOverride=${{ steps.version.outputs.code }} \
+            -PversionNameOverride=${{ steps.version.outputs.name }} \
+            --stacktrace
+
+      - name: Collect APKs
+        env:
+          BUILD_TYPE: ${{ inputs.build_type }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: |
+          mkdir -p dist
+          # Release builds are split per ABI (updater picks the asset whose name contains the device ABI).
+          for f in androidApp/build/outputs/apk/full/"$BUILD_TYPE"/*.apk; do
+            base=$(basename "$f" .apk)
+            cp "$f" "dist/CinemaOS-${VERSION_NAME}-${base#androidApp-full-}.apk"
+          done
+          ls -l dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinemaos-mobile-${{ inputs.build_type }}
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.name }}${{ inputs.build_type == 'debug' && '-debug' || '' }}
+          name: CinemaOS ${{ steps.version.outputs.name }}${{ inputs.build_type == 'debug' && ' (debug)' || '' }}
+          prerelease: ${{ inputs.build_type == 'debug' }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: dist/*.apk

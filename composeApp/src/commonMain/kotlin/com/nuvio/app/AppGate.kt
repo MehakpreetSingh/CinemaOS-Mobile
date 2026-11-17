@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,6 +46,7 @@ import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.profiles.ProfileSelectionScreen
 import com.nuvio.app.features.profiles.profileAvatarImageUrl
 import com.nuvio.app.navigation.AppRoute
+import kotlinx.coroutines.launch
 
 private enum class AppGateScreen {
     Loading,
@@ -145,6 +147,8 @@ internal fun AppGate(
         )
     }
 
+    val gateScope = rememberCoroutineScope()
+    var creatingDefaultProfile by remember { mutableStateOf(false) }
     var gateScreen by rememberSaveable { mutableStateOf(AppGateScreen.Loading.name) }
     var editingProfile by remember { mutableStateOf<NuvioProfile?>(null) }
     var autoSkipProfileSelection by rememberSaveable { mutableStateOf(false) }
@@ -268,34 +272,28 @@ internal fun AppGate(
         }
     }
 
+    // CinemaOS: no profile picker. Always boot into the active (or first) profile and
+    // create a default local profile on first launch.
     fun enterProfileGate(profiles: List<NuvioProfile>, syncOnEnter: Boolean) {
         profileSelectionLoading = false
         profileSelectionTransitionActive = false
-        if (profiles.isEmpty()) {
-            autoSkipProfileSelection = true
-            gateScreen = AppGateScreen.ProfileSelection.name
-            return
-        }
-
-        rememberedStartupProfile(profiles)?.let { profile ->
+        autoSkipProfileSelection = false
+        val profile = profiles.find { it.profileIndex == ProfileRepository.activeProfileId }
+            ?: profiles.firstOrNull()
+        if (profile != null) {
             selectProfile(profile, sync = syncOnEnter)
             gateScreen = AppGateScreen.Main.name
-            autoSkipProfileSelection = false
             return
         }
-
-        autoSkipProfileSelection = true
-        if (profiles.size == 1) {
-            val onlyProfile = profiles.first()
-            if (onlyProfile.pinEnabled) {
-                gateScreen = AppGateScreen.ProfileSelection.name
-                return
+        if (creatingDefaultProfile) return
+        creatingDefaultProfile = true
+        gateScope.launch {
+            ProfileRepository.createProfile(name = "CinemaOS", avatarColorHex = "#1E88E5")
+            ProfileRepository.state.value.profiles.firstOrNull()?.let {
+                selectProfile(it, sync = syncOnEnter)
             }
-            selectProfile(onlyProfile, sync = syncOnEnter)
             gateScreen = AppGateScreen.Main.name
-            autoSkipProfileSelection = false
-        } else {
-            gateScreen = AppGateScreen.ProfileSelection.name
+            creatingDefaultProfile = false
         }
     }
 
@@ -323,10 +321,8 @@ internal fun AppGate(
                 if (allowCachedProfileAccess) {
                     enterProfileGate(cachedProfiles, syncOnEnter = false)
                 } else {
-                    ProfileRepository.clearInMemory()
-                    profileSelectionLoading = false
-                    profileSelectionTransitionActive = false
-                    gateScreen = AppGateScreen.Auth.name
+                    // CinemaOS: skip the sign-in screen; use the local (anonymous) account.
+                    AuthRepository.signInAnonymously()
                 }
             }
             is AuthState.Authenticated -> {
@@ -486,13 +482,7 @@ internal fun AppGate(
                                     ready && gateScreen == AppGateScreen.Main.name,
                                 )
                             },
-                            onSwitchProfile = {
-                                autoSkipProfileSelection = false
-                                profileSelectionLoading = false
-                                profileSelectionTransitionActive = false
-                                skipProfileSelectionEnterAnimation = false
-                                gateScreen = AppGateScreen.ProfileSelection.name
-                            },
+                            onSwitchProfile = {},
                         )
                     }
                 }
