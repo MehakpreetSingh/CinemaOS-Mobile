@@ -7,12 +7,14 @@ import com.nuvio.app.features.debrid.LocalDebridAvailabilityService
 import com.nuvio.app.features.plugins.PluginRepository
 import com.nuvio.app.features.plugins.pluginContentId
 import com.nuvio.app.features.servers.ServerStreamSource
+import com.nuvio.app.features.tmdb.TmdbService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.streams_failed_to_load_scraper
 import org.jetbrains.compose.resources.getString
@@ -47,11 +50,13 @@ internal class StreamSearchTargets(
     val streamAddons: List<InstalledStreamAddonTarget>,
     val serverSources: List<ServerStreamSource>,
     val pluginProviderGroups: List<PluginProviderGroup>,
+    val nativeProviders: List<NativeProviderTarget> = emptyList(),
     /** The debrid account streams are checked with, as the checked streams are kept with the search. */
     val debridConfiguration: String = LocalDebridAvailabilityService.cacheCheckConfiguration(),
 ) {
     val totalTasks: Int
-        get() = streamAddons.size + serverSources.size + pluginProviderGroups.sumOf { it.scrapers.size }
+        get() = streamAddons.size + serverSources.size + pluginProviderGroups.sumOf { it.scrapers.size } +
+            nativeProviders.size
 
     /** Changes whenever the queried sources or the debrid account change, so a search for an older setup is not reused. */
     val sourceConfiguration: String
@@ -61,6 +66,7 @@ internal class StreamSearchTargets(
             pluginProviderGroups.forEach { group ->
                 add("plugin:${group.addonId}:${group.scrapers.joinToString(",") { it.id }}")
             }
+            nativeProviders.forEach { add("native:${it.provider.id}") }
             add("debrid:$debridConfiguration")
         }.joinToString("|")
 }
@@ -265,6 +271,55 @@ private fun CoroutineScope.launchStreamSearchTasks(
 
     targets.serverSources.forEach { source ->
         launch { onCompletion(StreamLoadCompletion.Addon(source.load())) }
+    }
+
+    if (targets.nativeProviders.isNotEmpty()) {
+        // One provider after the other in priority order (Movy > HdHub > Wing > MovieBox), each result is
+        // reported as soon as it arrives so the best source can start while the rest still loads.
+        launch {
+            val tmdbId = runCatchingUnlessCancelled {
+                TmdbService.ensureTmdbId(
+                    videoId = pluginContentId(targets.videoId, targets.season, targets.episode),
+                    mediaType = targets.type,
+                )
+            }.getOrNull() ?: pluginContentId(targets.videoId, targets.season, targets.episode)
+            val anime = if (tmdbId.all(Char::isDigit)) {
+                async { runCatchingUnlessCancelled { NativeCinemaSources.isAnimeTmdb(tmdbId) }.getOrDefault(false) }
+            } else {
+                null
+            }
+            for (target in targets.nativeProviders) {
+                val results = runCatchingUnlessCancelled {
+                    withTimeoutOrNull(target.provider.budgetMs) {
+                        NativeCinemaSources.fetch(
+                            providerId = target.provider.id,
+                            tmdbId = tmdbId,
+                            mediaType = targets.type,
+                            season = targets.season,
+                            episode = targets.episode,
+                        )
+                    }
+                }.getOrElse { error ->
+                    log.w(error) { "Native source failed: ${target.addonName}" }
+                    null
+                }.orEmpty()
+                // Anime titles belong to the anime plugins.
+                val dropped = results.isNotEmpty() && anime?.await() == true
+                onCompletion(
+                    StreamLoadCompletion.PluginScraper(
+                        addonId = target.addonId,
+                        streams = if (dropped) {
+                            emptyList()
+                        } else {
+                            results.map { result ->
+                                result.toNativeStreamItem(target.addonName, target.addonId)
+                            }
+                        },
+                        error = null,
+                    ),
+                )
+            }
+        }
     }
 
     targets.pluginProviderGroups.forEach { providerGroup ->

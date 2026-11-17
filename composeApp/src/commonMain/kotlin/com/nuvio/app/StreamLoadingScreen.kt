@@ -9,6 +9,7 @@ import com.nuvio.app.features.streams.StreamsUiState
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.debrid_resolving_stream
 import nuvio.composeapp.generated.resources.player_loading_preparing
+import nuvio.composeapp.generated.resources.streams_fetching_from
 import nuvio.composeapp.generated.resources.streams_finding_source
 import nuvio.composeapp.generated.resources.streams_loading_subtitles
 import nuvio.composeapp.generated.resources.youtube_resolving_stream
@@ -24,6 +25,8 @@ internal fun StreamLoadingScreen(
     onBack: () -> Unit,
     preparingPlayback: Boolean = false,
 ) {
+    // Only the source being fetched right now (CinemaOS sources run one after the other).
+    val currentFetcher = state.groups.firstOrNull { it.isLoading }?.addonName?.takeIf { it.isNotBlank() }
     val message = when {
         !showStatus -> null
         resolvingDebridStream -> stringResource(Res.string.debrid_resolving_stream)
@@ -32,6 +35,7 @@ internal fun StreamLoadingScreen(
         state.overlayMessage == stringResource(Res.string.streams_loading_subtitles) -> subtitleLoadingStatusMessage()
         state.overlayMessage != null -> state.overlayMessage
         state.autoPlayStream != null -> stringResource(Res.string.player_loading_preparing)
+        currentFetcher != null -> stringResource(Res.string.streams_fetching_from, currentFetcher)
         else -> stringResource(Res.string.streams_finding_source)
     }
     OpeningOverlay(

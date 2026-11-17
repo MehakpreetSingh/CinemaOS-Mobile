@@ -1714,6 +1714,7 @@
     <string name="streams_episode_title_with_name">S%1$d E%2$d - %3$s</string>
     <string name="streams_fetching">Fetching…</string>
     <string name="streams_finding_source">Finding stream source</string>
+    <string name="streams_fetching_from">Searching %1$s</string>
     <string name="playback_show_loading_status">Show loading status</string>
     <string name="playback_show_loading_status_sub">Display step-by-step progress while the player is initializing.</string>
     <string name="player_loading_preparing">Preparing stream…</string>

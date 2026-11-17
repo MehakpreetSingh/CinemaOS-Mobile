@@ -172,8 +172,14 @@ object StreamsRepository {
             repositories = pluginUiState.repositories,
             groupByRepository = pluginUiState.groupStreamsByRepository,
         )
+        // Built-in sources (Movy > HdHub > Wing > MovieBox) for movies and non-anime series.
+        val nativeTargets = if (!isNativeServerRequest && supportsNativeSources(type, videoId)) {
+            NativeCinemaSources.providers().map { it.toTarget() }
+        } else {
+            emptyList()
+        }
 
-        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty()) {
+        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty() && nativeTargets.isEmpty()) {
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
                 isAnyLoading = false,
@@ -197,7 +203,7 @@ object StreamsRepository {
 
         log.d { "Found ${streamAddons.size} addons for stream type=$type id=$videoId" }
 
-        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty()) {
+        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && serverSources.isEmpty() && nativeTargets.isEmpty()) {
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
                 isAnyLoading = false,
@@ -216,9 +222,17 @@ object StreamsRepository {
             streamAddons = streamAddons,
             serverSources = serverSources,
             pluginProviderGroups = pluginProviderGroups,
+            nativeProviders = nativeTargets,
         )
         val installedAddonOrder = streamAddons.map { it.addonName }
-        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(streamAddons.map { addon ->
+        val initialGroups = StreamAutoPlaySelector.orderAddonStreams(nativeTargets.map { target ->
+            AddonStreamGroup(
+                addonName = target.addonName,
+                addonId = target.addonId,
+                streams = emptyList(),
+                isLoading = true,
+            )
+        } + streamAddons.map { addon ->
             AddonStreamGroup(
                 addonName = addon.addonName,
                 addonId = addon.addonId,
@@ -271,6 +285,7 @@ object StreamsRepository {
                     bingeGroupOnly = bingeGroupOnly,
                     debridEnabled = debridSettings.canResolvePlayableLinks,
                     activeResolverProviderId = debridSettings.activeResolverProviderId,
+                    isSeries = !type.equals("movie", ignoreCase = true),
                 )
 
             fun settleAutoPlay(evaluation: StreamAutoPlayEvaluation) {
@@ -339,6 +354,24 @@ object StreamsRepository {
                 if (earlyEvaluation?.stream != null) {
                     settleAutoPlay(earlyEvaluation)
                     return
+                }
+
+                // CinemaOS sources arrive one after the other in priority order: as soon as the best link of
+                // the highest-ranked source that has answered is in and no higher-ranked source is still
+                // loading, start it instead of waiting for the lower-ranked ones.
+                if (autoPlayMode == StreamAutoPlayMode.FIRST_STREAM && persistedBingeGroup == null) {
+                    val evaluation = evaluateAutoPlay()
+                    val picked = evaluation.stream
+                    if (picked != null) {
+                        val pickedRank = AutoPlayRanking.providerRank(picked.addonName)
+                        val higherRankedPending = _uiState.value.groups.any {
+                            it.isLoading && AutoPlayRanking.providerRank(it.addonName) > pickedRank
+                        }
+                        if (pickedRank > 0 && !higherRankedPending) {
+                            settleAutoPlay(evaluation)
+                            return
+                        }
+                    }
                 }
 
                 if (
@@ -450,6 +483,9 @@ object StreamsRepository {
                                     } else {
                                         val mergedStreams = if (completion.streams.isEmpty()) {
                                             group.streams
+                                        } else if (group.addonId.startsWith("native:")) {
+                                            // Built-in sources already deliver their links best first.
+                                            group.streams + completion.streams
                                         } else {
                                             (group.streams + completion.streams).sortedForGroupedDisplay()
                                         }

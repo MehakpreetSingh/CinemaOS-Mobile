@@ -26,6 +26,26 @@ internal data class PluginProviderGroup(
     val scrapers: List<PluginScraper>,
 )
 
+/** A built-in native provider queried for one search; its streams are reported as a plugin-style completion. */
+internal data class NativeProviderTarget(
+    val addonId: String,
+    val addonName: String,
+    val provider: NativeCinemaProvider,
+)
+
+internal fun NativeCinemaProvider.toTarget(): NativeProviderTarget =
+    NativeProviderTarget(addonId = "native:$id", addonName = name, provider = this)
+
+/** Anime ids (kitsu / anilist / mal ...) belong to the anime plugins, not the native movie / series sources. */
+internal fun isAnimeVideoId(videoId: String): Boolean =
+    Regex("^(kitsu|anilist|mal|myanimelist|anidb)[:/]", RegexOption.IGNORE_CASE).containsMatchIn(videoId.trim())
+
+internal fun supportsNativeSources(type: String, videoId: String): Boolean =
+    !isAnimeVideoId(videoId) && when (type.lowercase()) {
+        "movie", "series", "tv", "show" -> true
+        else -> false
+    }
+
 internal sealed interface StreamLoadCompletion {
     data class Addon(val group: AddonStreamGroup) : StreamLoadCompletion
     data class PluginScraper(
@@ -87,9 +107,31 @@ internal fun PluginRuntimeResult.toStreamItem(
     addonName: String = scraper.name,
     addonId: String = "plugin:${scraper.id}",
     includeScraperNameInSubtitle: Boolean = false,
+): StreamItem = toStreamItem(
+    sourceLabel = scraper.name,
+    addonName = addonName,
+    addonId = addonId,
+    includeScraperNameInSubtitle = includeScraperNameInSubtitle,
+)
+
+internal fun PluginRuntimeResult.toNativeStreamItem(
+    addonName: String,
+    addonId: String,
+): StreamItem = toStreamItem(
+    sourceLabel = addonName,
+    addonName = addonName,
+    addonId = addonId,
+    includeScraperNameInSubtitle = false,
+)
+
+private fun PluginRuntimeResult.toStreamItem(
+    sourceLabel: String,
+    addonName: String,
+    addonId: String,
+    includeScraperNameInSubtitle: Boolean,
 ): StreamItem {
     val subtitleParts = listOfNotNull(
-        scraper.name.takeIf { includeScraperNameInSubtitle && it.isNotBlank() },
+        sourceLabel.takeIf { includeScraperNameInSubtitle && it.isNotBlank() },
         quality?.takeIf { it.isNotBlank() },
         size?.takeIf { it.isNotBlank() },
         language?.takeIf { it.isNotBlank() },
@@ -112,7 +154,7 @@ internal fun PluginRuntimeResult.toStreamItem(
         description = subtitleParts.joinToString(" • ").ifBlank { null },
         url = url,
         infoHash = infoHash,
-        sourceName = scraper.name,
+        sourceName = sourceLabel,
         addonName = addonName,
         addonId = addonId,
         streamType = normalizeStreamType(type),
