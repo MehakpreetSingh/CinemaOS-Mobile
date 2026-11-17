@@ -44,6 +44,10 @@ import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material.icons.rounded.Forward10
+import androidx.compose.material.icons.rounded.Replay10
+import androidx.compose.material.icons.rounded.VolumeOff
+import androidx.compose.material.icons.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -129,6 +133,7 @@ internal fun CinemaosPlayerControls(
     onOpenInExternalPlayer: (() -> Unit)?,
     onSubmitIntroClick: (() -> Unit)?,
     onStreamInfoClick: () -> Unit,
+    gestureController: PlayerGestureController? = null,
     parentalWarnings: List<ParentalWarning>,
     showParentalGuide: Boolean,
     onParentalGuideAnimationComplete: () -> Unit,
@@ -138,6 +143,8 @@ internal fun CinemaosPlayerControls(
     val typeScale = MaterialTheme.nuvioTypeScale
     val foreground = tokens.colors.playerControlsForeground
     var menuOpen by remember { mutableStateOf(false) }
+    var volumeLevel by remember { mutableStateOf<PlayerAudioLevel?>(gestureController?.currentVolume()) }
+    var lastVolume by remember { mutableStateOf(0.5f) }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val containerWidth = maxWidth
@@ -283,20 +290,34 @@ internal fun CinemaosPlayerControls(
             )
 
             if (showPlaybackControls) {
+                // Center: seek only; play and pause live in the bottom row as on Cinemaos-V3.
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    CenterControls(
-                        snapshot = playbackSnapshot,
-                        metrics = metrics,
-                        onSeekBack = { onInteraction(); onSeekBack() },
-                        onSeekForward = { onInteraction(); onSeekForward() },
-                        onTogglePlayback = { onInteraction(); onTogglePlayback() },
+                    Row(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .padding(bottom = metrics.centerLift),
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(metrics.centerGap * 2),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PlayerAction(
+                            description = stringResource(Res.string.compose_player_seek_back_10),
+                            onClick = { onInteraction(); onSeekBack() },
+                            icon = Icons.Rounded.Replay10,
+                            iconSize = metrics.playIconSize,
+                            tint = foreground,
+                        )
+                        PlayerAction(
+                            description = stringResource(Res.string.compose_player_seek_forward_10),
+                            onClick = { onInteraction(); onSeekForward() },
+                            icon = Icons.Rounded.Forward10,
+                            iconSize = metrics.playIconSize,
+                            tint = foreground,
+                        )
+                    }
                 }
 
-                // Bottom: timeline, then episodes on the left and the track and source actions on the right.
+                // Bottom: timeline, then play, volume and next on the left, episodes in the center,
+                // sources, audio, subtitles and settings on the right.
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -322,14 +343,63 @@ internal fun CinemaosPlayerControls(
                                 .padding(horizontal = PlayerTimelineContentInset),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (onNextEpisodeClick != null) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                                 PlayerAction(
-                                    description = stringResource(Res.string.player_next_episode),
-                                    onClick = { onInteraction(); onNextEpisodeClick() },
-                                    icon = Icons.Rounded.SkipNext,
-                                    iconSize = 32.dp,
+                                    description = stringResource(
+                                        if (playbackSnapshot.isPlaying) Res.string.compose_action_pause else Res.string.detail_btn_play,
+                                    ),
+                                    onClick = { onInteraction(); onTogglePlayback() },
+                                    painter = appIconPainter(
+                                        if (playbackSnapshot.isPlaying) AppIconResource.PlayerPause else AppIconResource.PlayerPlay,
+                                    ),
                                     tint = foreground,
                                 )
+                                if (gestureController != null) {
+                                    PlayerAction(
+                                        description = stringResource(Res.string.compose_player_muted),
+                                        onClick = {
+                                            onInteraction()
+                                            val current = gestureController.currentVolume()
+                                            if (current != null) {
+                                                if (current.isMuted || current.fraction <= 0.001f) {
+                                                    gestureController.setVolume(lastVolume)
+                                                } else {
+                                                    lastVolume = current.fraction
+                                                    gestureController.setVolume(0f)
+                                                }
+                                                volumeLevel = gestureController.currentVolume()
+                                            }
+                                        },
+                                        icon = if (volumeLevel?.let { it.isMuted || it.fraction <= 0.001f } == true) {
+                                            Icons.Rounded.VolumeOff
+                                        } else {
+                                            Icons.Rounded.VolumeUp
+                                        },
+                                        tint = foreground,
+                                    )
+                                }
+                                if (onNextEpisodeClick != null) {
+                                    PlayerAction(
+                                        description = stringResource(Res.string.player_next_episode),
+                                        onClick = { onInteraction(); onNextEpisodeClick() },
+                                        icon = Icons.Rounded.SkipNext,
+                                        iconSize = 32.dp,
+                                        tint = foreground,
+                                    )
+                                }
+                                if (!compact) {
+                                    Text(
+                                        text = formatPlaybackRuntime(displayedPositionMs, playbackSnapshot.durationMs, false),
+                                        style = typeScale.bodyMd.copy(fontSize = (metrics.timeSize.value + 2).sp),
+                                        color = foreground.copy(alpha = 0.9f),
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    )
+                                }
                             }
                             if (onEpisodesClick != null) {
                                 PlayerAction(
@@ -339,42 +409,38 @@ internal fun CinemaosPlayerControls(
                                     tint = foreground,
                                 )
                             }
-                            Spacer(Modifier.weight(1f))
-                            if (!compact) {
-                                Text(
-                                    text = formatPlaybackRuntime(displayedPositionMs, playbackSnapshot.durationMs, false),
-                                    style = typeScale.bodyMd.copy(fontSize = (metrics.timeSize.value + 2).sp),
-                                    color = foreground.copy(alpha = 0.9f),
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(end = 8.dp),
-                                )
-                            }
-                            if (onSourcesClick != null) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (onSourcesClick != null) {
+                                    PlayerAction(
+                                        description = stringResource(Res.string.compose_player_sources),
+                                        onClick = { onInteraction(); onSourcesClick() },
+                                        painter = appIconPainter(AppIconResource.PlayerSource),
+                                        tint = foreground,
+                                    )
+                                }
                                 PlayerAction(
-                                    description = stringResource(Res.string.compose_player_sources),
-                                    onClick = { onInteraction(); onSourcesClick() },
-                                    painter = appIconPainter(AppIconResource.PlayerSource),
+                                    description = stringResource(Res.string.compose_player_audio),
+                                    onClick = { onInteraction(); onAudioClick() },
+                                    painter = appIconPainter(AppIconResource.PlayerAudioFilled),
                                     tint = foreground,
                                 )
+                                PlayerAction(
+                                    description = stringResource(Res.string.compose_player_subtitles),
+                                    onClick = { onInteraction(); onSubtitleClick() },
+                                    painter = appIconPainter(AppIconResource.PlayerSubtitles),
+                                    tint = foreground,
+                                )
+                                PlayerAction(
+                                    description = stringResource(Res.string.compose_player_more_actions),
+                                    onClick = { onInteraction(); menuOpen = !menuOpen },
+                                    icon = Icons.Rounded.Settings,
+                                    tint = if (menuOpen) MaterialTheme.colorScheme.primary else foreground,
+                                )
                             }
-                            PlayerAction(
-                                description = stringResource(Res.string.compose_player_audio),
-                                onClick = { onInteraction(); onAudioClick() },
-                                painter = appIconPainter(AppIconResource.PlayerAudioFilled),
-                                tint = foreground,
-                            )
-                            PlayerAction(
-                                description = stringResource(Res.string.compose_player_subtitles),
-                                onClick = { onInteraction(); onSubtitleClick() },
-                                painter = appIconPainter(AppIconResource.PlayerSubtitles),
-                                tint = foreground,
-                            )
-                            PlayerAction(
-                                description = stringResource(Res.string.compose_player_more_actions),
-                                onClick = { onInteraction(); menuOpen = !menuOpen },
-                                icon = Icons.Rounded.Settings,
-                                tint = if (menuOpen) MaterialTheme.colorScheme.primary else foreground,
-                            )
                         }
                     }
                 }

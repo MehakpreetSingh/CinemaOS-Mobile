@@ -217,6 +217,7 @@ internal fun PlayerControlsShell(
         onOpenInExternalPlayer = onOpenInExternalPlayer,
         onSubmitIntroClick = onSubmitIntroClick,
         onStreamInfoClick = onStreamInfoClick,
+        gestureController = gestureController,
         parentalWarnings = parentalWarnings,
         showParentalGuide = showParentalGuide,
         onParentalGuideAnimationComplete = onParentalGuideAnimationComplete,
