@@ -2,6 +2,14 @@ package com.nuvio.app.features.home.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -294,7 +302,7 @@ fun HomeHeroSection(
                             },
                         )
                         .padding(vertical = layout.contentVerticalPadding),
-                    horizontalAlignment = if (layout.isTablet) Alignment.Start else Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.Start,
                 ) {
                     Box(
                         modifier = Modifier
@@ -313,6 +321,7 @@ fun HomeHeroSection(
                                 ) {
                                     HeroContentBlock(
                                         item = item,
+                                        rank = layer.itemIndex + 1,
                                         layout = layout,
                                         showImdbRating = showImdbRating,
                                         showMdbListRatings = showMdbListRatings,
@@ -323,30 +332,56 @@ fun HomeHeroSection(
                         }
                     }
 
-                    if (!layout.isTablet) {
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Surface(
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .clickable(enabled = onItemClick != null) {
-                                    onItemClick?.invoke(currentItem)
-                                },
-                            color = MaterialTheme.colorScheme.onBackground,
-                            contentColor = MaterialTheme.colorScheme.background,
-                            shape = RoundedCornerShape(40.dp),
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(Color.White)
+                                .clickable(enabled = onItemClick != null) { onItemClick?.invoke(currentItem) }
+                                .padding(horizontal = 22.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
                             Text(
-                                text = stringResource(Res.string.home_view_details),
-                                modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp),
-                                style = MaterialTheme.typography.titleMedium,
+                                text = stringResource(Res.string.action_play),
+                                color = Color.Black,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(Color.White.copy(alpha = 0.15f))
+                                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(50))
+                                .clickable(enabled = onItemClick != null) { onItemClick?.invoke(currentItem) }
+                                .padding(horizontal = 18.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Outlined.Info, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = stringResource(Res.string.home_hero_more_info),
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
                             )
                         }
                     }
 
                     if (items.size > 1) {
-                        Spacer(modifier = Modifier.height(if (layout.isTablet) 14.dp else 12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             items.forEachIndexed { index, _ ->
@@ -363,12 +398,12 @@ fun HomeHeroSection(
                                             }
                                         }
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.onBackground)
+                                        .background(Color.White)
                                         .graphicsLayer {
-                                            alpha = 0.25f + (0.75f * activeFraction)
+                                            alpha = 0.3f + (0.7f * activeFraction)
                                         }
-                                        .width(10.dp + (26.dp * activeFraction))
-                                        .height(4.dp),
+                                        .width(6.dp + (18.dp * activeFraction))
+                                        .height(6.dp),
                                 )
                             }
                         }
@@ -426,6 +461,7 @@ fun HomeHeroReservedSpace(
 @Composable
 private fun HeroContentBlock(
     item: MetaPreview,
+    rank: Int,
     layout: HomeHeroLayout,
     showImdbRating: Boolean,
     showMdbListRatings: Boolean,
@@ -440,19 +476,21 @@ private fun HeroContentBlock(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        horizontalAlignment = if (layout.isTablet) Alignment.Start else Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.Start,
     ) {
+        HeroBadgeLine(item = item, rank = rank)
+        Spacer(modifier = Modifier.height(10.dp))
         if (logoUrl != null && !logoLoadError) {
             AsyncImage(
                 model = logoUrl,
                 contentDescription = item.name,
                 modifier = Modifier
-                    .fillMaxWidth(layout.logoWidthFraction)
+                    .fillMaxWidth(layout.logoWidthFraction.coerceAtLeast(0.7f))
                     .aspectRatio(2.6f)
                     .clickable(enabled = onItemClick != null) {
                         onItemClick?.invoke(item)
                     },
-                alignment = if (layout.isTablet) Alignment.CenterStart else Alignment.Center,
+                alignment = Alignment.CenterStart,
                 contentScale = ContentScale.Fit,
                 onError = { logoLoadError = true },
             )
@@ -471,7 +509,7 @@ private fun HeroContentBlock(
                 },
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Black,
-                textAlign = if (layout.isTablet) TextAlign.Start else TextAlign.Center,
+                textAlign = TextAlign.Start,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -480,9 +518,47 @@ private fun HeroContentBlock(
         Spacer(modifier = Modifier.height(12.dp))
         HomeHeroMetaRows(
             item = item,
-            isTablet = layout.isTablet,
+            isTablet = true,
             showImdbRating = showImdbRating,
             showMdbListRatings = showMdbListRatings,
+        )
+        item.description?.takeIf { it.isNotBlank() }?.let { overview ->
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = overview,
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White.copy(alpha = 0.8f),
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroBadgeLine(item: MetaPreview, rank: Int) {
+    val type = item.type.trim().lowercase()
+    val typeLabel = when (type) {
+        "movie" -> stringResource(Res.string.media_movie)
+        "series", "tv" -> stringResource(Res.string.media_series)
+        else -> item.type.replaceFirstChar(Char::uppercase)
+    }
+    val year = item.releaseInfo?.trim()?.take(4)?.takeIf { it.length == 4 && it.all(Char::isDigit) }
+    val text = listOfNotNull("#$rank ${stringResource(Res.string.home_hero_trending)}", typeLabel, year)
+        .joinToString("  \u00B7  ")
+        .uppercase()
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.size(6.dp).clip(CircleShape).background(Color.White))
+        Text(
+            text = text,
+            color = Color.White.copy(alpha = 0.7f),
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 1.6.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -532,7 +608,7 @@ internal fun homeHeroLayout(
             ),
             contentMaxWidth = 480.dp,
             contentWidthFraction = 1f,
-            contentHorizontalPadding = 24.dp,
+            contentHorizontalPadding = 20.dp,
             contentVerticalPadding = 16.dp,
             bottomFadeHeight = 220.dp,
             logoWidthFraction = 0.62f,

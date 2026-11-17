@@ -63,6 +63,7 @@ internal actual object EpisodeReleaseNotificationPlatform {
                 socketTimeoutMillis = 15_000
             }
             engine {
+                config { dns(com.nuvio.app.core.network.IPv4FirstDns()) }
                 addInterceptor(NetworkErrorInterceptor())
             }
         }

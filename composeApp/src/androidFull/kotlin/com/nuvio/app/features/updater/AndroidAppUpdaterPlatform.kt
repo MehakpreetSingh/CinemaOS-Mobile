@@ -29,6 +29,7 @@ object AndroidAppUpdaterPlatform {
     private const val updateChannelKey = "update_channel"
 
     private val httpClient = OkHttpClient.Builder()
+        .dns(com.nuvio.app.core.network.IPv4FirstDns())
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)

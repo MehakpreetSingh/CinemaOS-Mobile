@@ -14,6 +14,7 @@ internal actual fun createApiHttpClient(): HttpClient = HttpClient(OkHttp) {
     }
     engine {
         config {
+            dns(IPv4FirstDns())
             followRedirects(false)
             followSslRedirects(false)
             retryOnConnectionFailure(false)

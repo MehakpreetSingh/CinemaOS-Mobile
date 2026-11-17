@@ -62,7 +62,7 @@ private class CinemaOsAuthException(val code: String) : Exception(code)
 class AndroidCinemaOsAccountService(context: Context) : CinemaOsAccountService {
     private val appContext = context.applicationContext
     private val store = CinemaOsAccountStore(appContext)
-    private val http = OkHttpClient()
+    private val http = OkHttpClient.Builder().dns(com.nuvio.app.core.network.IPv4FirstDns()).build()
     private val json = "application/json".toMediaType()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val prefs = appContext.getSharedPreferences("cinemaos_sync", Context.MODE_PRIVATE)

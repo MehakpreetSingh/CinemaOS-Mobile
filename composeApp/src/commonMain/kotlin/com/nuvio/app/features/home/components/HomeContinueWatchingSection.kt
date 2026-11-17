@@ -706,7 +706,7 @@ private fun ContinueWatchingCard(
     }
     val episodeTitle = localizedEpisodeTitle(item.episodeTitle, item.episodeNumber) ?: airDateText
     val badgeText = continueWatchingCardBadgeText(item = item, airDateText = airDateText)
-    val backgroundColor = MaterialTheme.colorScheme.background
+    val backgroundColor = Color.Black
     val badgeBackground = continueWatchingBadgeBackground(item)
 
     Box(
@@ -765,7 +765,8 @@ private fun ContinueWatchingCard(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(cardMetrics.contentPadding),
+                .padding(cardMetrics.contentPadding)
+                .padding(bottom = 4.dp),
             verticalArrangement = Arrangement.spacedBy(cardMetrics.textGap),
         ) {
             if (episodeCode != null) {
@@ -825,24 +826,19 @@ private fun ContinueWatchingCard(
             )
         }
         if (item.progressFraction > 0f) {
+            // CinemaOS style: flush 4dp track along the bottom edge, white fill
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(
-                        horizontal = cardMetrics.progressHorizontalPadding,
-                        vertical = cardMetrics.progressBottomPadding,
-                    )
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(999.dp))
-                    .height(cardMetrics.progressHeight)
-                    .background(Color.Black.copy(alpha = 0.30f)),
+                    .height(4.dp)
+                    .background(Color.White.copy(alpha = 0.2f)),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(item.progressFraction.coerceIn(0f, 1f))
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(Color.White),
                 )
             }
         }

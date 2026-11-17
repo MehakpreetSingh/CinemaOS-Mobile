@@ -43,9 +43,10 @@ import nuvio.composeapp.generated.resources.compose_nav_home
 import nuvio.composeapp.generated.resources.compose_nav_library
 import nuvio.composeapp.generated.resources.compose_nav_profile
 import nuvio.composeapp.generated.resources.compose_nav_search
-import nuvio.composeapp.generated.resources.sidebar_anime
-import nuvio.composeapp.generated.resources.sidebar_library
-import nuvio.composeapp.generated.resources.sidebar_search
+import nuvio.composeapp.generated.resources.dock_anime
+import nuvio.composeapp.generated.resources.dock_home
+import nuvio.composeapp.generated.resources.dock_library
+import nuvio.composeapp.generated.resources.dock_search
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -85,26 +86,26 @@ internal fun MainTabsDestination(
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Home,
                 onClick = { onTabSelected(AppScreenTab.Home) },
-                icon = Icons.Filled.Home,
+                drawable = Res.drawable.dock_home,
                 label = stringResource(Res.string.compose_nav_home),
-            ),
-            FloatingNavigationItem(
-                selected = selectedTab == AppScreenTab.Anime,
-                onClick = { onTabSelected(AppScreenTab.Anime) },
-                drawable = Res.drawable.sidebar_anime,
-                label = stringResource(Res.string.compose_nav_anime),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Search,
                 onClick = { onTabSelected(AppScreenTab.Search) },
-                drawable = Res.drawable.sidebar_search,
+                drawable = Res.drawable.dock_search,
                 label = stringResource(Res.string.compose_nav_search),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Library,
                 onClick = { onTabSelected(AppScreenTab.Library) },
-                drawable = Res.drawable.sidebar_library,
+                drawable = Res.drawable.dock_library,
                 label = stringResource(Res.string.compose_nav_library),
+            ),
+            FloatingNavigationItem(
+                selected = selectedTab == AppScreenTab.Anime,
+                onClick = { onTabSelected(AppScreenTab.Anime) },
+                drawable = Res.drawable.dock_anime,
+                label = stringResource(Res.string.compose_nav_anime),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Settings,
@@ -141,19 +142,19 @@ internal fun MainTabsDestination(
                         NavItem(
                             selected = selectedTab == AppScreenTab.Anime,
                             onClick = { onTabSelected(AppScreenTab.Anime) },
-                            icon = Res.drawable.sidebar_anime,
+                            icon = Res.drawable.dock_anime,
                             contentDescription = stringResource(Res.string.compose_nav_anime),
                         )
                         NavItem(
                             selected = selectedTab == AppScreenTab.Search,
                             onClick = { onTabSelected(AppScreenTab.Search) },
-                            icon = Res.drawable.sidebar_search,
+                            icon = Res.drawable.dock_search,
                             contentDescription = stringResource(Res.string.compose_nav_search),
                         )
                         NavItem(
                             selected = selectedTab == AppScreenTab.Library,
                             onClick = { onTabSelected(AppScreenTab.Library) },
-                            icon = Res.drawable.sidebar_library,
+                            icon = Res.drawable.dock_library,
                             contentDescription = stringResource(Res.string.compose_nav_library),
                         )
                         NavItem(

@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.home_view_all
@@ -155,7 +156,7 @@ fun NuvioPosterCard(
                 .aspectRatio(shape.aspectRatio)
                 .clip(cardShape)
                 .background(tokens.colors.surfaceCard)
-                .border(1.dp, Color.White.copy(alpha = 0.10f), cardShape)
+                .border(1.dp, Color.White.copy(alpha = 0.08f), cardShape)
                 .nuvioCardDepth(
                     shape = cardShape,
                     surface = NuvioCardDepthSurface.Posters,
@@ -250,7 +251,7 @@ fun NuvioPosterCard(
         if (shouldShowTitleBelow) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = tokens.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -291,14 +292,19 @@ private fun NuvioShelfSectionHeader(
             Box(
                 modifier = Modifier
                     .width(3.dp)
-                    .height(18.dp)
-                    .background(tokens.colors.textPrimary, RoundedCornerShape(2.dp)),
+                    .height(16.dp)
+                    .background(Color.White, RoundedCornerShape(2.dp)),
             )
             Text(
                 text = title,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleLarge,
-                color = tokens.colors.textPrimary,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 20.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    letterSpacing = (-0.3).sp,
+                ),
+                color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -350,7 +356,7 @@ private fun NuvioViewAllPill(
 
 private val NuvioPosterShape.aspectRatio: Float
     get() = when (this) {
-        NuvioPosterShape.Poster -> 0.675f
+        NuvioPosterShape.Poster -> 0.6667f
         NuvioPosterShape.Square -> 1f
         NuvioPosterShape.Landscape -> PosterLandscapeAspectRatio
     }

@@ -1,5 +1,24 @@
 package com.nuvio.app.core.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.hazeEffect
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -60,134 +79,98 @@ internal actual fun FloatingNavigationBar(
     glowEnabled: Boolean,
 ) {
     if (items.isEmpty()) return
-    val showGlow = !floatingNavigationGlowSupported || glowEnabled
-    val glowStrength by animateFloatAsState(
-        targetValue = if (showGlow) 1f else 0f,
-        animationSpec = tween(420, easing = NuvioTokens.Motion.standard),
-        label = "nav_glow_strength",
-    )
-    val tokens = MaterialTheme.nuvio
-    val accentColor = tokens.colors.accent
-    val selectedSurface = accentColor.copy(alpha = NuvioTokens.Opacity.selected)
-    val labelFraction by animateFloatAsState(
-        targetValue = scrollState?.labelVisibility ?: 1f,
-        animationSpec = tween(NuvioTokens.Motion.sheetEnterMillis, easing = NuvioTokens.Motion.standard),
-        label = "jelly_labels",
-    )
-    val layoutDirection = LocalLayoutDirection.current
-    val isRtl = layoutDirection == LayoutDirection.Rtl
-    val selectedIndex = items.indexOfFirst { it.selected }
-    val visualSelectedIndex = visualNavIndex(selectedIndex, items.size, isRtl)
-    val motion = remember(items.size, isRtl) { JellyMotion(visualSelectedIndex, items.size) }
-    val currentItems by rememberUpdatedState(items)
-    val currentIsRtl by rememberUpdatedState(isRtl)
-    val density = LocalDensity.current
-    val trackHeight = 48.dp + (if (compactSize) 8.dp else 16.dp) * labelFraction
-    val horizontalPadding = 58.dp - 30.dp * labelFraction
-
-    LaunchedEffect(visualSelectedIndex, items.size) {
-        motion.select(visualSelectedIndex)
-    }
-    LaunchedEffect(motion.running) {
-        if (!motion.running) return@LaunchedEffect
-        var previous = withFrameNanos { it }
-        while (motion.running) {
-            withFrameNanos { now ->
-                motion.advance((now - previous) / 1_000_000_000.0)
-                previous = now
-            }
-        }
-    }
-
+    // CinemaOS dock: black glass capsule. The active tab grows into a white pill showing its name;
+    // the other tabs stay as quiet icons (same language as the CinemaOS phone app dock).
+    val dockHeight = if (compactSize) 52.dp else 60.dp
+    val capsule = RoundedCornerShape(50)
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(contentPadding)
-            .padding(horizontal = horizontalPadding),
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .widthIn(max = 400.dp)
-                .fillMaxWidth()
-                .height(trackHeight)
-                .onSizeChanged {
-                    motion.resize(it.width / density.density, it.height / density.density, items.size)
-                }
-                .pointerInput(motion, density, items.size, isRtl) {
-                    detectJellyTabGestures(motion, density.density, { currentItems }, { currentIsRtl })
-                },
-        ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer {
-                        val frame = motion.frame
-                        scaleX = frame.trackScale
-                        scaleY = frame.trackScale
+                .height(dockHeight)
+                .shadow(14.dp, capsule, clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                .clip(capsule)
+                .then(
+                    if (hazeState != null) {
+                        Modifier.hazeEffect(state = hazeState) { blurRadius = 24.dp }
+                    } else {
+                        Modifier
                     },
-            ) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .graphicsLayer {
-                            val frame = motion.frame
-                            transformOrigin = TransformOrigin(
-                                if (size.width > 0) frame.originX * density.density / size.width else 0.5f,
-                                0.5f,
-                            )
-                            scaleX = frame.trackScaleX
-                            translationY = frame.trackOffsetY * density.density
-                        },
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .graphicsLayer { translationX = motion.frame.panelOffset * density.density },
-                    ) {
-                        Box(
-                            Modifier.matchParentSize()
-                                .clip(RoundedCornerShape(50))
-                                .drawWithContent {
-                                    drawContent()
-                                    drawJellyGlow(motion.frame, accentColor.copy(alpha = accentColor.alpha * glowStrength))
-                                },
-                        ) {
-                            GlassBarSurface(hazeState, Modifier.matchParentSize(), glowStrength)
-                        }
-                        Box(
-                            Modifier.matchParentSize().drawWithContent {
-                                if (selectedIndex >= 0) {
-                                    clipPath(jellyPillPath(motion.frame, items.size), ClipOp.Difference) {
-                                        this@drawWithContent.drawContent()
-                                    }
-                                } else {
-                                    drawContent()
-                                }
-                            },
-                        ) {
-                            JellyTabRow(items, labelFraction, motion, active = false, compactSize = compactSize, modifier = Modifier.matchParentSize())
-                        }
-                        if (selectedIndex >= 0) {
-                            Box(
-                                Modifier.matchParentSize()
-                                    .clearAndSetSemantics {}
-                                    .drawWithContent {
-                                        drawJellyPill(
-                                            motion.frame,
-                                            items.size,
-                                            selectedSurface,
-                                            accentColor.copy(alpha = accentColor.alpha * glowStrength),
-                                        ) { drawContent() }
-                                    },
-                            ) {
-                                JellyTabRow(items, labelFraction, motion, active = true, compactSize = compactSize, modifier = Modifier.matchParentSize())
-                            }
-                        }
-                        JellyTabTargets(items, labelFraction, motion, compactSize, Modifier.matchParentSize())
-                    }
-                }
+                )
+                .background(Color.Black.copy(alpha = if (hazeState != null) 0.62f else 0.92f))
+                .border(1.dp, Color.White.copy(alpha = 0.14f), capsule)
+                .padding(horizontal = 6.dp)
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            items.forEach { item ->
+                CinemaDockSlot(item = item, compactSize = compactSize)
             }
+        }
+    }
+}
+
+@Composable
+private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
+    val on = item.selected
+    val tint by animateColorAsState(
+        targetValue = if (on) Color.Black else Color.White.copy(alpha = 0.58f),
+        label = "dock_tint",
+    )
+    val bg by animateColorAsState(
+        targetValue = if (on) Color.White else Color.Transparent,
+        label = "dock_bg",
+    )
+    val slotHeight = if (compactSize) 40.dp else 46.dp
+    val iconSize = if (compactSize) 20.dp else 22.dp
+    val shape = RoundedCornerShape(50)
+    Row(
+        modifier = Modifier
+            .animateContentSize()
+            .height(slotHeight)
+            .widthIn(min = 44.dp)
+            .clip(shape)
+            .background(bg, shape)
+            .then(
+                if (item.content == null) {
+                    Modifier.selectable(
+                        selected = on,
+                        role = Role.Tab,
+                        onClick = item.onClick,
+                    )
+                } else {
+                    Modifier
+                },
+            )
+            .padding(horizontal = if (on) 14.dp else 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val content = item.content
+        when {
+            content != null -> Box(Modifier.size(iconSize + 4.dp), contentAlignment = Alignment.Center) {
+                content(item.onClick)
+            }
+            item.icon != null -> Icon(item.icon, item.label, Modifier.size(iconSize), tint = tint)
+            item.drawable != null -> Icon(painterResource(item.drawable), item.label, Modifier.size(iconSize), tint = tint)
+        }
+        if (on) {
+            Text(
+                text = item.label,
+                color = Color.Black,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 0.2.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 64.dp),
+            )
         }
     }
 }

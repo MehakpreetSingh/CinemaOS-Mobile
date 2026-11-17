@@ -46,6 +46,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                         httpClient = {
                             HttpClient(OkHttp) {
                                 engine {
+                                    config { dns(com.nuvio.app.core.network.IPv4FirstDns()) }
                                     addInterceptor(NetworkErrorInterceptor())
                                 }
                             }

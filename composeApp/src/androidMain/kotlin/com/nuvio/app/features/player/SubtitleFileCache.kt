@@ -25,6 +25,7 @@ object SubtitleFileCache {
     private var appContext: Context? = null
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(com.nuvio.app.core.network.IPv4FirstDns())
             .addInterceptor(NetworkErrorInterceptor())
             .addInterceptor(SentryNetworkBreadcrumbInterceptor())
             .build()

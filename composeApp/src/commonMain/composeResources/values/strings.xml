@@ -1622,6 +1622,8 @@
     <string name="home_empty_no_rows_title">No Home content available</string>
     <string name="home_load_failed_title">Couldn’t load Home</string>
     <string name="home_view_details">View Details</string>
+    <string name="home_hero_more_info">More Info</string>
+    <string name="home_hero_trending">Trending</string>
     <string name="meta_section_actions_description">Play and save controls.</string>
     <string name="meta_section_actions_title">Actions</string>
     <string name="meta_section_cast_description">Principal cast list.</string>
