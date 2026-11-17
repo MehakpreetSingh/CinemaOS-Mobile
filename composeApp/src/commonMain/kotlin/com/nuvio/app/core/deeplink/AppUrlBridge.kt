@@ -71,8 +71,11 @@ internal fun parseAppDeepLink(url: String): AppDeepLink? {
     val parsedUrl = runCatching { Url(url) }.getOrNull() ?: return null
     val scheme = parsedUrl.protocol.name.lowercase()
     if (scheme == "stremio") {
-        // Addon install links are disabled in CinemaOS (addon management is hidden).
-        return null
+        return if (looksLikeAddonHost(parsedUrl.host.lowercase())) {
+            customSchemeToHttpsUrl(url, scheme)?.let(AppDeepLink::AddonInstall)
+        } else {
+            null
+        }
     }
     val host = parsedUrl.host.lowercase()
     val pathSegments = parsedUrl.pathSegments.map(String::trim).filter(String::isNotBlank)
@@ -104,8 +107,11 @@ internal fun parseAppDeepLink(url: String): AppDeepLink? {
         "auth" -> null
 
         else -> {
-            // Addon install links are disabled in CinemaOS (addon management is hidden).
-            null
+            if (looksLikeAddonHost(host)) {
+                customSchemeToHttpsUrl(url, scheme)?.let(AppDeepLink::AddonInstall)
+            } else {
+                null
+            }
         }
     }
 }
