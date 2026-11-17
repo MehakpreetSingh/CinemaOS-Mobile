@@ -564,7 +564,7 @@ private fun BoxScope.RenderPlaybackOverlays(
         horizontalSafePadding = horizontalSafePadding,
         onUnlock = { unlockPlayerControls() },
         showOpeningOverlay = playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null &&
-            (activeSourceUrl.isBlank() || isP2pPlaybackActive),
+            (activeSourceUrl.isBlank() || activeTorrentInfoHash != null),
         backdropArtwork = background ?: poster,
         logo = logo,
         title = title,
