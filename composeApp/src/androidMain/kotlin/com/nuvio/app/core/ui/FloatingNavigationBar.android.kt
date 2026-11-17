@@ -65,6 +65,7 @@ import com.nuvio.app.core.ui.jelly.drawJellyGlow
 import com.nuvio.app.core.ui.jelly.drawJellyPill
 import com.nuvio.app.core.ui.jelly.jellyPillPath
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -103,15 +104,20 @@ internal actual fun FloatingNavigationBar(
                 .clip(capsule)
                 .then(
                     if (hazeState != null) {
-                        Modifier.hazeEffect(state = hazeState) { blurRadius = 24.dp }
+                        Modifier.hazeEffect(state = hazeState) {
+                            blurRadius = 32.dp
+                            backgroundColor = dockSurface
+                            tints = listOf(HazeTint(dockSurface.copy(alpha = 0.28f)))
+                            noiseFactor = 0.08f
+                        }
                     } else {
                         Modifier
                     },
                 )
-                .background(dockSurface.copy(alpha = if (hazeState != null) 0.62f else 0.94f))
+                .background(dockSurface.copy(alpha = if (hazeState != null) 0.12f else 0.94f))
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(dockBorder.copy(alpha = 0.30f), dockBorder.copy(alpha = 0.06f))),
+                    Brush.verticalGradient(listOf(dockBorder.copy(alpha = 0.38f), dockBorder.copy(alpha = 0.08f))),
                     capsule,
                 )
                 .padding(horizontal = 6.dp)
