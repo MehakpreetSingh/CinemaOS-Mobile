@@ -26,6 +26,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -103,6 +104,8 @@ jobs:
             -Pnuvio.ios.distribution=appstore \
             -PversionCodeOverride=${{ steps.version.outputs.code }} \
             -PversionNameOverride=${{ steps.version.outputs.name }} \
+            -Dorg.gradle.jvmargs="-Xmx9g -Dfile.encoding=UTF-8 -XX:MaxMetaspaceSize=1536m" \
+            -Pkotlin.daemon.jvmargs=-Xmx3g \
             --stacktrace
 
       - name: Collect APKs
