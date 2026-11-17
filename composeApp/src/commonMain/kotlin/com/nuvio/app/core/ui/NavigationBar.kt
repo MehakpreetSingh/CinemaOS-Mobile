@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -153,7 +154,8 @@ fun NuvioNavigationBar(
                     Modifier
                 },
             )
-            .background(Color(0xFF1C1C1E).copy(alpha = if (hazeState != null) 0.55f else 0.82f))
+            .background(Color.Black.copy(alpha = if (hazeState != null) 0.55f else 0.88f))
+            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(NuvioTokens.Radius.full))
 
         Box(modifier = pillModifier) {
             Row(
@@ -227,13 +229,12 @@ private class NuvioNavigationBarScopeImpl(
         val tokens = MaterialTheme.nuvio
         val palette = MaterialTheme.themePalette
         val iconColor by animateColorAsState(
-            targetValue = if (selected) tokens.colors.accent else tokens.colors.textMuted,
+            targetValue = if (selected) Color.Black else Color.White.copy(alpha = 0.55f),
             label = "nav_icon_color",
         )
         // Selected item gets a pill-shaped highlight using accent at low opacity
         val selectedBgColor by animateColorAsState(
-            targetValue = if (selected) tokens.colors.accent.copy(alpha = NuvioTokens.Opacity.selected)
-            else Color.Transparent,
+            targetValue = if (selected) Color.White else Color.Transparent,
             label = "nav_bg_color",
         )
 
@@ -254,11 +255,10 @@ private class NuvioNavigationBarScopeImpl(
             ) {
                 Icon(
                     modifier = Modifier
-                        .size(iconSize)
-                        .then(if (selected) Modifier.gradientMask(palette.accentBrush()) else Modifier),
+                        .size(iconSize),
                     imageVector = icon,
                     contentDescription = contentDescription,
-                    tint = if (selected) Color.White else iconColor,
+                    tint = iconColor,
                 )
                 NavItemLabel(label = label, labelFraction = labelFraction, iconColor = iconColor, selected = selected, compactSize = compactSize)
             }
@@ -277,12 +277,11 @@ private class NuvioNavigationBarScopeImpl(
         val tokens = MaterialTheme.nuvio
         val palette = MaterialTheme.themePalette
         val iconColor by animateColorAsState(
-            targetValue = if (selected) tokens.colors.accent else tokens.colors.textMuted,
+            targetValue = if (selected) Color.Black else Color.White.copy(alpha = 0.55f),
             label = "nav_icon_color",
         )
         val selectedBgColor by animateColorAsState(
-            targetValue = if (selected) tokens.colors.accent.copy(alpha = NuvioTokens.Opacity.selected)
-            else Color.Transparent,
+            targetValue = if (selected) Color.White else Color.Transparent,
             label = "nav_bg_color",
         )
 
@@ -303,11 +302,10 @@ private class NuvioNavigationBarScopeImpl(
             ) {
                 Icon(
                     modifier = Modifier
-                        .size(iconSize)
-                        .then(if (selected) Modifier.gradientMask(palette.accentBrush()) else Modifier),
+                        .size(iconSize),
                     painter = painterResource(icon),
                     contentDescription = contentDescription,
-                    tint = if (selected) Color.White else iconColor,
+                    tint = iconColor,
                 )
                 NavItemLabel(label = label, labelFraction = labelFraction, iconColor = iconColor, selected = selected, compactSize = compactSize)
             }
@@ -324,12 +322,11 @@ private class NuvioNavigationBarScopeImpl(
     ) {
         val tokens = MaterialTheme.nuvio
         val selectedBgColor by animateColorAsState(
-            targetValue = if (selected) tokens.colors.accent.copy(alpha = NuvioTokens.Opacity.selected)
-            else Color.Transparent,
+            targetValue = if (selected) Color.White else Color.Transparent,
             label = "nav_bg_color",
         )
         val iconColor by animateColorAsState(
-            targetValue = if (selected) tokens.colors.accent else tokens.colors.textMuted,
+            targetValue = if (selected) Color.Black else Color.White.copy(alpha = 0.55f),
             label = "nav_icon_color",
         )
 

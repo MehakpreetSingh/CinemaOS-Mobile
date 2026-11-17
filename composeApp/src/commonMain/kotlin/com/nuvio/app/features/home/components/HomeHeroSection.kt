@@ -155,7 +155,7 @@ fun HomeHeroSection(
                 itemCount = items.size,
                 coroutineScope = coroutineScope,
             )
-            .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
+            .clip(RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)),
     ) {
         val layout = homeHeroLayout(
             maxWidthDp = maxWidth.value,
@@ -365,10 +365,10 @@ fun HomeHeroSection(
                                         .clip(CircleShape)
                                         .background(MaterialTheme.colorScheme.onBackground)
                                         .graphicsLayer {
-                                            alpha = 0.35f + (0.57f * activeFraction)
+                                            alpha = 0.25f + (0.75f * activeFraction)
                                         }
-                                        .width(8.dp + (24.dp * activeFraction))
-                                        .height(8.dp),
+                                        .width(10.dp + (26.dp * activeFraction))
+                                        .height(4.dp),
                                 )
                             }
                         }
@@ -407,7 +407,7 @@ fun HomeHeroReservedSpace(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
+            .clip(RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)),
     ) {
         val layout = homeHeroLayout(
             maxWidthDp = maxWidth.value,

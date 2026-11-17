@@ -325,6 +325,10 @@ private fun DetailIconAction(
             MaterialTheme.colorScheme.onSurface
         },
         tonalElevation = 6.dp,
+        border = if (active) null else androidx.compose.foundation.BorderStroke(
+            1.dp,
+            androidx.compose.ui.graphics.Color.White.copy(alpha = 0.15f),
+        ),
     ) {
         Box(
             modifier = Modifier

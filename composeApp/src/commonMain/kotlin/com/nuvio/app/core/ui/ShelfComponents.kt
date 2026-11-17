@@ -1,6 +1,7 @@
 package com.nuvio.app.core.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -153,7 +154,8 @@ fun NuvioPosterCard(
                 .fillMaxWidth()
                 .aspectRatio(shape.aspectRatio)
                 .clip(cardShape)
-                .background(tokens.colors.surface)
+                .background(tokens.colors.surfaceCard)
+                .border(1.dp, Color.White.copy(alpha = 0.10f), cardShape)
                 .nuvioCardDepth(
                     shape = cardShape,
                     surface = NuvioCardDepthSurface.Posters,
@@ -248,7 +250,7 @@ fun NuvioPosterCard(
         if (shouldShowTitleBelow) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
                 color = tokens.colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -286,6 +288,12 @@ private fun NuvioShelfSectionHeader(
             horizontalArrangement = Arrangement.spacedBy(tokens.spacing.controlGap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(18.dp)
+                    .background(tokens.colors.textPrimary, RoundedCornerShape(2.dp)),
+            )
             Text(
                 text = title,
                 modifier = Modifier.weight(1f),
@@ -325,8 +333,8 @@ private fun NuvioViewAllPill(
         modifier = modifier
             .size(actionSize)
             .background(
-                color = tokens.colors.surface,
-                shape = RoundedCornerShape(NuvioTokens.Radius.xl),
+                color = Color.White.copy(alpha = 0.10f),
+                shape = RoundedCornerShape(NuvioTokens.Radius.full),
             )
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,

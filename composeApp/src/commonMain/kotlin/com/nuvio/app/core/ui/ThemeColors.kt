@@ -167,10 +167,10 @@ object ThemeColors {
         onSecondary = Color(0xFF111111),
         onSecondaryVariant = Color(0xFF111111),
         focusRing = Color(0xFFFFFFFF),
-        focusBackground = Color(0xFF303030),
-        background = Color(0xFF0D0D0D),
-        backgroundElevated = Color(0xFF1A1A1A),
-        backgroundCard = Color(0xFF222222),
+        focusBackground = Color(0xFF27272A),
+        background = Color(0xFF09090B),
+        backgroundElevated = Color(0xFF111113),
+        backgroundCard = Color(0xFF18181B),
     )
 
     fun getColorPalette(

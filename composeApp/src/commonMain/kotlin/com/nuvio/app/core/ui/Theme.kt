@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.sp
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.jetbrains_sans_bold
 import nuvio.composeapp.generated.resources.jetbrains_sans_regular
@@ -49,12 +50,12 @@ private fun buildColorScheme(palette: ThemeColorPalette, amoled: Boolean = false
     secondary = palette.secondaryVariant,
     onSecondary = palette.onSecondaryVariant,
     background = if (amoled) Color.Black else palette.background,
-    onBackground = Color(0xFFF5F7F8),
+    onBackground = Color(0xFFFAFAFA),
     surface = palette.backgroundElevated,
-    onSurface = Color(0xFFF5F7F8),
+    onSurface = Color(0xFFFAFAFA),
     surfaceVariant = palette.backgroundCard,
-    onSurfaceVariant = Color(0xFF969CA3),
-    outline = Color(0xFF252A2A),
+    onSurfaceVariant = Color(0xFFA1A1AA),
+    outline = Color(0xFF27272A),
     error = Color(0xFFE36A8A),
     onError = Color(0xFFFCE5EC),
 )
@@ -88,7 +89,8 @@ private val NuvioTypography: Typography
             fontFamily = JetBrainsSans,
             fontSize = NuvioTokens.Type.titleSm,
             lineHeight = NuvioTokens.LineHeight.materialTitleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.3).sp,
         ),
         titleMedium = TextStyle(
             fontFamily = JetBrainsSans,
