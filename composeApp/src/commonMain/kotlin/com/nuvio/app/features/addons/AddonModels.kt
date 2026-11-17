@@ -89,6 +89,11 @@ internal fun List<ManagedAddon>.toOverview(): AddonOverview =
         totalCatalogs = filter { it.enabled }.sumOf { it.manifest?.catalogs?.size ?: 0 },
     )
 
+/** True for the Anime Kitsu catalog addon; its catalogs live on the Anime tab, not Home. */
+fun ManagedAddon.isAnimeKitsuAddon(): Boolean =
+    manifestUrl.contains("anime-kitsu", ignoreCase = true) ||
+        manifest?.id?.contains("kitsu", ignoreCase = true) == true
+
 internal fun List<ManagedAddon>.enabledAddons(): List<ManagedAddon> =
     filter { it.enabled }
 

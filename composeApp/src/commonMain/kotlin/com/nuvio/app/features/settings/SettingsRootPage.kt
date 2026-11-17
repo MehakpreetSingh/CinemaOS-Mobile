@@ -16,6 +16,12 @@ internal fun LazyListScope.settingsRootContent(
     onWatchPartyClick: (() -> Unit)? = null,
     category: SettingsCategory? = null,
 ) {
+    if (category == null || category == SettingsCategory.You) {
+        // Easy-to-find CinemaOS website login / sync status at the very top of Settings.
+        item(key = "cinemaos_account_card") {
+            CinemaOsAccountCard()
+        }
+    }
     SettingsCategory.entries.filter { category == null || it == category }.forEach { group ->
         item(key = group.name) {
             SettingsGroup(isTablet = isTablet) {

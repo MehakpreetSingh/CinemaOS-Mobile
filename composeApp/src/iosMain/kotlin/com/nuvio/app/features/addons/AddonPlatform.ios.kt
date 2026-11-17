@@ -43,6 +43,13 @@ actual object AddonStorage {
         )
     }
 
+    actual fun loadDefaultsSeeded(profileId: Int): Boolean =
+        NSUserDefaults.standardUserDefaults.boolForKey("addon_defaults_seeded_v1_$profileId")
+
+    actual fun saveDefaultsSeeded(profileId: Int, seeded: Boolean) {
+        NSUserDefaults.standardUserDefaults.setBool(seeded, forKey = "addon_defaults_seeded_v1_$profileId")
+    }
+
     actual fun loadAddonEnabledStates(profileId: Int): Map<String, Boolean> =
         NSUserDefaults.standardUserDefaults
             .stringForKey("${addonEnabledStatesKey}_$profileId")

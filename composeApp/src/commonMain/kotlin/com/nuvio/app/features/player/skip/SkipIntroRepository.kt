@@ -11,6 +11,9 @@ object SkipIntroRepository {
     private val animeSkipShowIdCache = HashMap<String, String>()
     private const val NO_ID = "__none__"
 
+    /** Public Anime-Skip client id, used when the user has not entered their own. */
+    private const val DEFAULT_ANIME_SKIP_CLIENT_ID = "ZGfO0sMF3eCwLYf8yMSCJjlynwNGRXWE"
+
     private val introDbConfigured: Boolean
         get() = IntroDbConfig.URL.isNotBlank()
 
@@ -139,7 +142,12 @@ object SkipIntroRepository {
 
         val simklIdsDeferred = async { SimklIdResolver.resolveIds("kitsu", kitsuId) }
         val simklIds = simklIdsDeferred.await()
-        val malIdStr = simklIds?.mal
+        val kitsuMappings = if (simklIds?.mal == null || simklIds?.anilist == null) {
+            SkipIntroApi.resolveKitsuMappings(kitsuId)
+        } else {
+            null to null
+        }
+        val malIdStr = simklIds?.mal ?: kitsuMappings.first
         val resolvedImdbId = imdbId ?: simklIds?.imdb
 
         val aniSkipDeferred = async {
@@ -153,7 +161,7 @@ object SkipIntroRepository {
         }
 
         // Anime-Skip only needs the AniList id, so it must not depend on the IntroDB episode mapping.
-        val anilistId = simklIds?.anilist
+        val anilistId = simklIds?.anilist ?: kitsuMappings.second
         val animeSkipDeferred = async {
             if (anilistId != null) fetchFromAnimeSkip(anilistId, episode, season = null) else emptyList()
         }
@@ -225,8 +233,7 @@ object SkipIntroRepository {
 
     private suspend fun fetchFromAnimeSkip(anilistId: String, episode: Int, season: Int?): List<SkipInterval> {
         val settings = PlayerSettingsRepository.uiState.value
-        val clientId = settings.animeSkipClientId.trim()
-        if (clientId.isBlank()) return emptyList()
+        val clientId = settings.animeSkipClientId.trim().ifBlank { DEFAULT_ANIME_SKIP_CLIENT_ID }
         if (!settings.animeSkipEnabled) return emptyList()
 
         return try {

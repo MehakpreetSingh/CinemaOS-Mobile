@@ -47,6 +47,8 @@ internal fun CinemaOsAccountCard() {
     val uriHandler = LocalUriHandler.current
 
     var flowActive by remember { mutableStateOf(false) }
+    // When true, the website's approval page opens in the browser as soon as the code is issued.
+    var openBrowserWhenReady by remember { mutableStateOf(false) }
     var code by remember { mutableStateOf<CinemaOsDeviceCode?>(null) }
     var secondsLeft by remember { mutableStateOf(0) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -69,6 +71,10 @@ internal fun CinemaOsAccountCard() {
                 }
                 error = null
                 code = started
+                if (openBrowserWhenReady) {
+                    openBrowserWhenReady = false
+                    runCatching { uriHandler.openUri(started.verificationUrlComplete) }
+                }
                 var interval = started.intervalSec
                 var elapsed = 0
                 var sincePoll = 0
@@ -158,13 +164,25 @@ internal fun CinemaOsAccountCard() {
                 Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
             }
             Spacer(modifier = Modifier.height(14.dp))
-            NuvioPrimaryButton(
-                text = "Sign in",
-                onClick = {
-                    error = null
-                    flowActive = true
-                },
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                NuvioPrimaryButton(
+                    text = "Log in with CinemaOS website",
+                    onClick = {
+                        error = null
+                        openBrowserWhenReady = true
+                        flowActive = true
+                    },
+                )
+                TextButton(
+                    onClick = {
+                        error = null
+                        openBrowserWhenReady = false
+                        flowActive = true
+                    },
+                ) {
+                    Text("Show a code or QR instead")
+                }
+            }
         } else {
             val dc = code
             Column(
@@ -211,7 +229,7 @@ internal fun CinemaOsAccountCard() {
                     )
                     Spacer(modifier = Modifier.height(14.dp))
                     NuvioPrimaryButton(
-                        text = "Sign in on this phone",
+                        text = "Open cinemaos.tech to approve",
                         onClick = { runCatching { uriHandler.openUri(dc.verificationUrlComplete) } },
                     )
                 }
@@ -219,7 +237,10 @@ internal fun CinemaOsAccountCard() {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 }
-                TextButton(onClick = { flowActive = false }) {
+                TextButton(onClick = {
+                    openBrowserWhenReady = false
+                    flowActive = false
+                }) {
                     Text("Cancel")
                 }
             }

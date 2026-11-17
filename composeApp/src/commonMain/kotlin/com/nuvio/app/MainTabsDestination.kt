@@ -38,10 +38,12 @@ import com.nuvio.app.features.settings.ThemeSettingsRepository
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.compose_nav_anime
 import nuvio.composeapp.generated.resources.compose_nav_home
 import nuvio.composeapp.generated.resources.compose_nav_library
 import nuvio.composeapp.generated.resources.compose_nav_profile
 import nuvio.composeapp.generated.resources.compose_nav_search
+import nuvio.composeapp.generated.resources.sidebar_anime
 import nuvio.composeapp.generated.resources.sidebar_library
 import nuvio.composeapp.generated.resources.sidebar_search
 import org.jetbrains.compose.resources.stringResource
@@ -87,6 +89,12 @@ internal fun MainTabsDestination(
                 label = stringResource(Res.string.compose_nav_home),
             ),
             FloatingNavigationItem(
+                selected = selectedTab == AppScreenTab.Anime,
+                onClick = { onTabSelected(AppScreenTab.Anime) },
+                drawable = Res.drawable.sidebar_anime,
+                label = stringResource(Res.string.compose_nav_anime),
+            ),
+            FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Search,
                 onClick = { onTabSelected(AppScreenTab.Search) },
                 drawable = Res.drawable.sidebar_search,
@@ -129,6 +137,12 @@ internal fun MainTabsDestination(
                             onClick = { onTabSelected(AppScreenTab.Home) },
                             icon = Icons.Filled.Home,
                             contentDescription = stringResource(Res.string.compose_nav_home),
+                        )
+                        NavItem(
+                            selected = selectedTab == AppScreenTab.Anime,
+                            onClick = { onTabSelected(AppScreenTab.Anime) },
+                            icon = Res.drawable.sidebar_anime,
+                            contentDescription = stringResource(Res.string.compose_nav_anime),
                         )
                         NavItem(
                             selected = selectedTab == AppScreenTab.Search,
@@ -178,7 +192,7 @@ internal fun MainTabsDestination(
                 if (isTabletLayout && !useNativeBottomTabs) {
                     val tabletNavBarScrollState = remember { NuvioNavBarScrollState().apply { collapse() } }
                     FloatingNavigationBar(
-                        modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 416.dp),
+                        modifier = Modifier.align(Alignment.TopCenter).widthIn(max = 500.dp),
                         scrollState = tabletNavBarScrollState,
                         hazeState = navBarHazeState,
                         contentPadding = PaddingValues(

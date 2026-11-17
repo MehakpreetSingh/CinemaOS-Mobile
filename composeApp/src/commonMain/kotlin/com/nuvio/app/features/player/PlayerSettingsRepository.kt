@@ -95,7 +95,7 @@ data class PlayerSettingsUiState(
     val streamAutoPlayTimeoutSeconds: Int = DEFAULT_STREAM_AUTO_PLAY_TIMEOUT_SECONDS,
     val skipIntroEnabled: Boolean = true,
     val autoSkipSegmentTypes: Set<AutoSkipSegmentType> = emptySet(),
-    val animeSkipEnabled: Boolean = false,
+    val animeSkipEnabled: Boolean = true,
     val animeSkipClientId: String = "",
     val introDbApiKey: String = "",
     val introSubmitEnabled: Boolean = false,
@@ -210,7 +210,7 @@ object PlayerSettingsRepository {
     private var streamAutoPlayTimeoutSeconds = DEFAULT_STREAM_AUTO_PLAY_TIMEOUT_SECONDS
     private var skipIntroEnabled = true
     private var autoSkipSegmentTypes: Set<AutoSkipSegmentType> = emptySet()
-    private var animeSkipEnabled = false
+    private var animeSkipEnabled = true
     private var animeSkipClientId = ""
     private var introDbApiKey = ""
     private var introSubmitEnabled = false
@@ -313,7 +313,7 @@ object PlayerSettingsRepository {
         streamAutoPlayTimeoutSeconds = DEFAULT_STREAM_AUTO_PLAY_TIMEOUT_SECONDS
         skipIntroEnabled = true
         autoSkipSegmentTypes = emptySet()
-        animeSkipEnabled = false
+        animeSkipEnabled = true
         animeSkipClientId = ""
         introDbApiKey = ""
         introSubmitEnabled = false
@@ -487,7 +487,7 @@ object PlayerSettingsRepository {
             ?.mapNotNull(AutoSkipSegmentType::fromStoredValue)?.toSet() ?: buildSet {
                 if (PlayerSettingsStorage.loadAutoSkipMovieCredits() == true) add(AutoSkipSegmentType.MOVIE_CREDITS)
             }
-        animeSkipEnabled = PlayerSettingsStorage.loadAnimeSkipEnabled() ?: false
+        animeSkipEnabled = PlayerSettingsStorage.loadAnimeSkipEnabled() ?: true
         animeSkipClientId = PlayerSettingsStorage.loadAnimeSkipClientId() ?: ""
         introDbApiKey = PlayerSettingsStorage.loadIntroDbApiKey() ?: ""
         introSubmitEnabled = PlayerSettingsStorage.loadIntroSubmitEnabled() ?: false

@@ -48,6 +48,13 @@ private data class AddonPushItem(
 
 private const val ADDON_PUSH_DEBOUNCE_MS = 500L
 
+/** Addons the CinemaOS TV app ships with: catalogs/meta (Cinemeta), subtitles, and anime catalogs (Kitsu). */
+internal val CINEMAOS_DEFAULT_ADDON_URLS = listOf(
+    "https://v3-cinemeta.strem.io/manifest.json",
+    "https://opensubtitles-v3.strem.io/manifest.json",
+    "https://anime-kitsu.strem.fun/manifest.json",
+)
+
 object AddonRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val log = Logger.withTag("AddonRepository")
@@ -67,8 +74,18 @@ object AddonRepository {
         currentProfileId = effectiveProfileId
         log.d { "initialize() — loading local addons for profile $currentProfileId" }
 
-        val storedUrls = dedupeManifestUrls(AddonStorage.loadInstalledAddonUrls(currentProfileId))
-        val enabledByUrl = loadLocalEnabledStates()
+        var storedUrls = dedupeManifestUrls(AddonStorage.loadInstalledAddonUrls(currentProfileId))
+        val enabledByUrl = loadLocalEnabledStates().toMutableMap()
+        if (!AddonStorage.loadDefaultsSeeded(currentProfileId)) {
+            val missing = CINEMAOS_DEFAULT_ADDON_URLS
+                .map(::ensureManifestSuffix)
+                .filter { it !in storedUrls }
+            storedUrls = storedUrls + missing
+            missing.forEach { enabledByUrl[it] = true }
+            AddonStorage.saveInstalledAddonUrls(currentProfileId, storedUrls)
+            AddonStorage.saveAddonEnabledStates(currentProfileId, enabledByUrl)
+            AddonStorage.saveDefaultsSeeded(currentProfileId, true)
+        }
         log.d { "initialize() — local addon count: ${storedUrls.size}" }
         if (storedUrls.isEmpty()) return
 

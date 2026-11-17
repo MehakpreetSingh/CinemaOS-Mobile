@@ -5,6 +5,7 @@ import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.features.addons.isAnimeKitsuAddon
 import com.nuvio.app.features.catalog.supportsPagination
 import com.nuvio.app.features.servers.ServerCatalog
 import kotlinx.coroutines.runBlocking
@@ -43,7 +44,7 @@ fun buildAddonCatalogRefreshSignature(addons: List<ManagedAddon>): List<String> 
     }.sorted()
 
 fun buildHomeCatalogDefinitions(addons: List<ManagedAddon>): List<HomeCatalogDefinition> =
-    addons.enabledAddons().mapNotNull { addon ->
+    addons.enabledAddons().filterNot { it.isAnimeKitsuAddon() }.mapNotNull { addon ->
         val manifest = addon.manifest ?: return@mapNotNull null
         addon to manifest
     }.flatMap { (addon, manifest) ->

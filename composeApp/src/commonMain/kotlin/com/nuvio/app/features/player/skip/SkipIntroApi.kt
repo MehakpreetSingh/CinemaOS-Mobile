@@ -3,6 +3,10 @@ package com.nuvio.app.features.player.skip
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.addons.httpPostJsonWithHeaders
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.CancellationException
 
 internal object SkipIntroApi {
@@ -112,6 +116,30 @@ internal object SkipIntroApi {
             json.decodeFromString<AniSkipResponse>(text)
         } catch (_: Exception) {
             null
+        }
+    }
+
+    // --- Kitsu id mappings (keyless MAL / AniList id fallback when Simkl is not configured) ---
+
+    /** Returns (malId, anilistId) for a Kitsu anime id, either may be null. */
+    suspend fun resolveKitsuMappings(kitsuId: String): Pair<String?, String?> {
+        return try {
+            val text = httpGetText("https://kitsu.io/api/edge/anime/$kitsuId/mappings?page%5Blimit%5D=20")
+            val data = json.parseToJsonElement(text).jsonObject["data"]?.jsonArray ?: return null to null
+            var mal: String? = null
+            var anilist: String? = null
+            for (entry in data) {
+                val attributes = entry.jsonObject["attributes"]?.jsonObject ?: continue
+                val site = attributes["externalSite"]?.jsonPrimitive?.contentOrNull ?: continue
+                val externalId = attributes["externalId"]?.jsonPrimitive?.contentOrNull ?: continue
+                if (site == "myanimelist/anime" && mal == null) mal = externalId
+                if (site == "anilist/anime" && anilist == null) anilist = externalId
+            }
+            mal to anilist
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null to null
         }
     }
 

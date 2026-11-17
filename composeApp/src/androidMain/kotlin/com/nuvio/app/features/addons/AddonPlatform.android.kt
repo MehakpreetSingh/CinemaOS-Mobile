@@ -63,6 +63,13 @@ actual object AddonStorage {
             .mapNotNull(::parseEnabledStateLine)
             .toMap()
 
+    actual fun loadDefaultsSeeded(profileId: Int): Boolean =
+        preferences?.getBoolean("addon_defaults_seeded_v1_$profileId", false) ?: true
+
+    actual fun saveDefaultsSeeded(profileId: Int, seeded: Boolean) {
+        preferences?.edit()?.putBoolean("addon_defaults_seeded_v1_$profileId", seeded)?.apply()
+    }
+
     actual fun saveAddonEnabledStates(profileId: Int, states: Map<String, Boolean>) {
         val payload = states.entries.joinToString(separator = "\n") { (url, enabled) ->
             "$url\t$enabled"
