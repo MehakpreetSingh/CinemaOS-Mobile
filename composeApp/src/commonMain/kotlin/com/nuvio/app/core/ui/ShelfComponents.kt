@@ -156,7 +156,7 @@ fun NuvioPosterCard(
                 .aspectRatio(shape.aspectRatio)
                 .clip(cardShape)
                 .background(tokens.colors.surfaceCard)
-                .border(1.dp, Color.White.copy(alpha = 0.08f), cardShape)
+                .border(1.dp, tokens.colors.borderSubtle, cardShape)
                 .nuvioCardDepth(
                     shape = cardShape,
                     surface = NuvioCardDepthSurface.Posters,
@@ -293,7 +293,7 @@ private fun NuvioShelfSectionHeader(
                 modifier = Modifier
                     .width(3.dp)
                     .height(16.dp)
-                    .background(Color.White, RoundedCornerShape(2.dp)),
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
             )
             Text(
                 text = title,
@@ -304,7 +304,7 @@ private fun NuvioShelfSectionHeader(
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                     letterSpacing = (-0.3).sp,
                 ),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -339,7 +339,7 @@ private fun NuvioViewAllPill(
         modifier = modifier
             .size(actionSize)
             .background(
-                color = Color.White.copy(alpha = 0.10f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
                 shape = RoundedCornerShape(NuvioTokens.Radius.full),
             )
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),

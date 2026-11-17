@@ -57,10 +57,10 @@ object NuvioTokens {
         val xxl = Space.s24
         val full = 999.dp
 
-        val card = xl
+        val card = xxl
         val compactCard = lg
         val sheet = xxl
-        val dialog = xxl
+        val dialog = Space.s28
         val button = xl
         val chip = full
         val poster = lg
@@ -357,7 +357,7 @@ data class NuvioThemeTokens(
 )
 
 internal val LocalNuvioThemeTokens = staticCompositionLocalOf {
-    defaultNuvioThemeTokens(ThemeColors.White, amoled = false, colorScheme = null)
+    defaultNuvioThemeTokens(ThemeColors.CinemaOs, amoled = false, colorScheme = null)
 }
 
 val MaterialTheme.nuvio: NuvioThemeTokens
@@ -371,15 +371,15 @@ internal fun defaultNuvioThemeTokens(
     colorScheme: ColorScheme?,
 ): NuvioThemeTokens {
     val background = if (amoled) Color.Black else palette.background
-    val textPrimary = Color(0xFFFAFAFA)
-    val textSecondary = Color(0xFFD4D4D8)
-    val textMuted = Color(0xFFA1A1AA)
+    val textPrimary = Color(0xFFF5F7F8)
+    val textSecondary = Color(0xFFB8BEC5)
+    val textMuted = Color(0xFF969CA3)
     val surface = palette.backgroundElevated
     val surfaceCard = palette.backgroundCard
     val accent = palette.secondary
     val accentStrong = palette.secondaryVariant
-    val borderSubtle = Color.White.copy(alpha = 0.08f)
-    val borderDefault = Color(0xFF27272A)
+    val borderSubtle = Color(0xFF252A2A).copy(alpha = 0.55f)
+    val borderDefault = Color(0xFF252A2A)
     val overlayScrim = Color.Black.copy(alpha = NuvioTokens.Opacity.overlayMedium)
 
     return NuvioThemeTokens(
@@ -405,11 +405,11 @@ internal fun defaultNuvioThemeTokens(
             focusBackground = palette.focusBackground,
             borderSubtle = borderSubtle,
             borderDefault = borderDefault,
-            borderStrong = Color(0xFF3F3F46),
+            borderStrong = Color(0xFF3A4040),
             borderFocus = palette.focusRing,
             borderSelected = accent.copy(alpha = NuvioTokens.Opacity.strong),
             success = Color(0xFF66BB6A),
-            warning = Color(0xFFFACC15),
+            warning = Color(0xFFFFC857),
             danger = colorScheme?.error ?: Color(0xFFE36A8A),
             info = Color(0xFF42A5F5),
             neutral = textMuted,
@@ -420,10 +420,10 @@ internal fun defaultNuvioThemeTokens(
             overlayDisabled = Color.Black.copy(alpha = NuvioTokens.Opacity.disabled),
             shimmer = Color.White.copy(alpha = 0.10f),
             skeleton = Color.White.copy(alpha = 0.06f),
-            playerControlsBackground = Color.Black.copy(alpha = 0.60f),
+            playerControlsBackground = Color.Black.copy(alpha = 0.72f),
             playerControlsForeground = Color.White,
-            playerTimelineTrack = Color.White.copy(alpha = 0.20f),
-            playerTimelineFill = Color(0xFFFAFAFA),
+            playerTimelineTrack = Color.White.copy(alpha = 0.30f),
+            playerTimelineFill = accent,
             playerSubtitlePreview = Color.Black.copy(alpha = 0.55f),
             playerBuffering = accent,
             parentalGuide = Color(0xFF5D1F1F),
@@ -511,7 +511,7 @@ internal fun defaultNuvioThemeTokens(
             playerWide = NuvioTokens.Breakpoint.playerWide,
         ),
         components = NuvioComponentTokens(
-            navItemShape = RoundedCornerShape(NuvioTokens.Radius.full),
+            navItemShape = RoundedCornerShape(NuvioTokens.Radius.xl),
             navIconSize = NuvioTokens.Icon.xl,
             navItemMaxWidth = 150.dp,
             sheetMaxWidth = 520.dp,

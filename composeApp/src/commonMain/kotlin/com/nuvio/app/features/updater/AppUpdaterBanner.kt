@@ -177,7 +177,7 @@ private fun AppUpdateBanner(
         label = "updateBannerProgress",
     )
     val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    val isWhiteTheme = MaterialTheme.appTheme == AppTheme.WHITE
+    val isWhiteTheme = MaterialTheme.appTheme == AppTheme.WHITE || MaterialTheme.appTheme == AppTheme.CINEMAOS
     val progressBrush = MaterialTheme.themePalette.accentBrush()
     val progressAlpha = if (isWhiteTheme) 0.18f else 1f
     val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)

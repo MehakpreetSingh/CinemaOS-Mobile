@@ -39,7 +39,7 @@ class ThemeAccessTest {
 
         assertEquals(AppTheme.CUSTOM, themes.first())
         assertEquals(AppTheme.CUSTOM, resolveAppTheme(AppTheme.CUSTOM, CosmeticEntitlements.None))
-        assertEquals(AppTheme.WHITE, resolveAppTheme(null, CosmeticEntitlements.None))
+        assertEquals(AppTheme.CINEMAOS, resolveAppTheme(null, CosmeticEntitlements.None))
     }
 
     @Test

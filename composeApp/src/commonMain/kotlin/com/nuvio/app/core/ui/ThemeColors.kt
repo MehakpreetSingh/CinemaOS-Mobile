@@ -1,6 +1,7 @@
 package com.nuvio.app.core.ui
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 data class ThemeColorPalette(
     val secondary: Color,
@@ -16,7 +17,40 @@ data class ThemeColorPalette(
     val backgroundCard: Color = Color(0xFF242424),
 )
 
+private fun contrastRatio(a: Color, b: Color): Float {
+    val la = a.luminance() + 0.05f
+    val lb = b.luminance() + 0.05f
+    return if (la > lb) la / lb else lb / la
+}
+
+/** Keeps the declared content color when it has enough contrast, otherwise picks near-black or white. */
+private fun readableContent(container: Color, declared: Color): Color {
+    if (contrastRatio(container, declared) >= 4.5f) return declared
+    val dark = Color(0xFF111111)
+    return if (contrastRatio(container, dark) >= contrastRatio(container, Color.White)) dark else Color.White
+}
+
+/** Guarantees text and icons drawn on accent colors are readable for every palette. */
+fun ThemeColorPalette.withReadableContent(): ThemeColorPalette = copy(
+    onSecondary = readableContent(secondary, onSecondary),
+    onSecondaryVariant = readableContent(secondaryVariant, onSecondaryVariant),
+)
+
 object ThemeColors {
+
+    /** CinemaOS default: zinc and black surfaces with a white accent. */
+    val CinemaOs = ThemeColorPalette(
+        secondary = Color(0xFFFAFAFA),
+        secondaryVariant = Color(0xFFE4E4E7),
+        nativeAccentHex = "#FAFAFA",
+        onSecondary = Color(0xFF09090B),
+        onSecondaryVariant = Color(0xFF09090B),
+        focusRing = Color(0xFFFFFFFF),
+        focusBackground = Color(0xFF27272A),
+        background = Color(0xFF09090B),
+        backgroundElevated = Color(0xFF111113),
+        backgroundCard = Color(0xFF18181B),
+    )
 
     val Gold = ThemeColorPalette(
         secondary = Color(0xFFE8A91C),
@@ -167,16 +201,22 @@ object ThemeColors {
         onSecondary = Color(0xFF111111),
         onSecondaryVariant = Color(0xFF111111),
         focusRing = Color(0xFFFFFFFF),
-        focusBackground = Color(0xFF27272A),
-        background = Color(0xFF09090B),
-        backgroundElevated = Color(0xFF111113),
-        backgroundCard = Color(0xFF18181B),
+        focusBackground = Color(0xFF303030),
+        background = Color(0xFF0D0D0D),
+        backgroundElevated = Color(0xFF1A1A1A),
+        backgroundCard = Color(0xFF222222),
     )
 
     fun getColorPalette(
         theme: AppTheme,
         customColors: CustomThemeColors = CustomThemeColors.Default,
+    ): ThemeColorPalette = rawPalette(theme, customColors).withReadableContent()
+
+    private fun rawPalette(
+        theme: AppTheme,
+        customColors: CustomThemeColors,
     ): ThemeColorPalette = when (theme) {
+        AppTheme.CINEMAOS -> CinemaOs
         AppTheme.CUSTOM -> customColors.toColorPalette()
         AppTheme.GOLD -> Gold
         AppTheme.JADE -> Jade

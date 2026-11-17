@@ -341,16 +341,16 @@ fun HomeHeroSection(
                             modifier = Modifier
                                 .height(44.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.primary)
                                 .clickable(enabled = onItemClick != null) { onItemClick?.invoke(currentItem) }
                                 .padding(horizontal = 22.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
                             Text(
                                 text = stringResource(Res.string.action_play),
-                                color = Color.Black,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
@@ -398,7 +398,7 @@ fun HomeHeroSection(
                                             }
                                         }
                                         .clip(CircleShape)
-                                        .background(Color.White)
+                                        .background(MaterialTheme.colorScheme.primary)
                                         .graphicsLayer {
                                             alpha = 0.3f + (0.7f * activeFraction)
                                         }

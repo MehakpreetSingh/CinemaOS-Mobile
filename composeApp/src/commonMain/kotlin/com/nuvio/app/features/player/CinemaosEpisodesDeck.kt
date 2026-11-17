@@ -39,6 +39,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -271,7 +275,7 @@ private fun EpisodesDeckContent(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = CinemaosPlayerIcons.Close,
+                    imageVector = Icons.Rounded.Close,
                     contentDescription = stringResource(Res.string.cinemaos_player_close_episodes),
                     tint = Color.White.copy(alpha = 0.85f),
                     modifier = Modifier.size(18.dp),
@@ -386,14 +390,14 @@ private fun EpisodesDeckContent(
                                 .widthIn(min = 32.dp)
                                 .height(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (active) Color.White else Color.White.copy(alpha = 0.07f))
+                                .background(if (active) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.07f))
                                 .clickable(role = Role.Button, onClick = { focus = index })
                                 .padding(horizontal = 8.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
                                 text = (ep.episode ?: (index + 1)).toString(),
-                                color = if (active) Color.Black else Color.White.copy(alpha = 0.60f),
+                                color = if (active) MaterialTheme.colorScheme.onPrimary else Color.White.copy(alpha = 0.60f),
                                 style = TextStyle(fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold),
                             )
                             if (playing && !active) {
@@ -403,7 +407,7 @@ private fun EpisodesDeckContent(
                                         .padding(top = 2.dp, end = 0.dp)
                                         .size(6.dp)
                                         .clip(CircleShape)
-                                        .background(Color.White),
+                                        .background(MaterialTheme.colorScheme.primary),
                                 )
                             }
                         }
@@ -433,8 +437,8 @@ private fun SeasonSwitcher(
         modifier = Modifier
             .widthIn(max = 460.dp)
             .clip(shape)
-            .background(CinemaosPlayerColors.Tile)
-            .border(1.dp, Color.White.copy(alpha = 0.10f), shape),
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         contentPadding = PaddingValues(4.dp),
     ) {
@@ -449,14 +453,14 @@ private fun SeasonSwitcher(
                 modifier = Modifier
                     .height(32.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (active) Color.White else Color.Transparent)
+                    .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable(role = Role.Button, onClick = { onSelected(season) })
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = label,
-                    color = if (active) Color.Black else Color.White.copy(alpha = 0.65f),
+                    color = if (active) MaterialTheme.colorScheme.onPrimary else Color.White.copy(alpha = 0.65f),
                     style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
                 )
@@ -556,7 +560,7 @@ private fun DeckCard(
                     .padding(12.dp)
                     .height(24.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(horizontal = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -565,11 +569,11 @@ private fun DeckCard(
                     modifier = Modifier
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(Color.Black),
+                        .background(MaterialTheme.colorScheme.onPrimary),
                 )
                 Text(
                     text = stringResource(Res.string.compose_player_playing),
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold),
                 )
             }
@@ -621,13 +625,13 @@ private fun DeckCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
-                        .background(Color.White),
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        imageVector = CinemaosPlayerIcons.Play,
+                        imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = stringResource(Res.string.cinemaos_player_play_episode),
-                        tint = Color.Black,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier
                             .size(22.dp)
                             .padding(start = 2.dp),
@@ -647,7 +651,7 @@ private fun DeckCard(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth(progressFraction)
-                        .background(Color.White),
+                        .background(MaterialTheme.colorScheme.primary),
                 )
             }
         }

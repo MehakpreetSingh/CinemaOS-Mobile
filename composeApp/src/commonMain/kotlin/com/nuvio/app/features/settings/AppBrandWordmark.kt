@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -33,7 +34,7 @@ internal fun AppBrandWordmark(
     ) {
         Text(
             text = "CinemaOS",
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 30.sp,
             fontWeight = FontWeight.Black,
             letterSpacing = (-0.8).sp,

@@ -154,8 +154,8 @@ fun NuvioNavigationBar(
                     Modifier
                 },
             )
-            .background(Color.Black.copy(alpha = if (hazeState != null) 0.55f else 0.88f))
-            .border(1.dp, Color.White.copy(alpha = 0.14f), RoundedCornerShape(NuvioTokens.Radius.full))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = if (hazeState != null) 0.6f else 0.92f))
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(NuvioTokens.Radius.full))
 
         Box(modifier = pillModifier) {
             Row(
@@ -229,12 +229,12 @@ private class NuvioNavigationBarScopeImpl(
         val tokens = MaterialTheme.nuvio
         val palette = MaterialTheme.themePalette
         val iconColor by animateColorAsState(
-            targetValue = if (selected) Color.Black else Color.White.copy(alpha = 0.55f),
+            targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             label = "nav_icon_color",
         )
         // Selected item gets a pill-shaped highlight using accent at low opacity
         val selectedBgColor by animateColorAsState(
-            targetValue = if (selected) Color.White else Color.Transparent,
+            targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
             label = "nav_bg_color",
         )
 
@@ -277,11 +277,11 @@ private class NuvioNavigationBarScopeImpl(
         val tokens = MaterialTheme.nuvio
         val palette = MaterialTheme.themePalette
         val iconColor by animateColorAsState(
-            targetValue = if (selected) Color.Black else Color.White.copy(alpha = 0.55f),
+            targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             label = "nav_icon_color",
         )
         val selectedBgColor by animateColorAsState(
-            targetValue = if (selected) Color.White else Color.Transparent,
+            targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
             label = "nav_bg_color",
         )
 
@@ -322,11 +322,11 @@ private class NuvioNavigationBarScopeImpl(
     ) {
         val tokens = MaterialTheme.nuvio
         val selectedBgColor by animateColorAsState(
-            targetValue = if (selected) Color.White else Color.Transparent,
+            targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
             label = "nav_bg_color",
         )
         val iconColor by animateColorAsState(
-            targetValue = if (selected) Color.Black else Color.White.copy(alpha = 0.55f),
+            targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             label = "nav_icon_color",
         )
 

@@ -86,6 +86,9 @@ internal actual fun FloatingNavigationBar(
     // the other tabs stay as quiet icons (same language as the CinemaOS phone app dock).
     val dockHeight = if (compactSize) 52.dp else 60.dp
     val capsule = RoundedCornerShape(50)
+    val dockSurface = MaterialTheme.colorScheme.surface
+    val dockBorder = MaterialTheme.colorScheme.onSurface
+    val dockShadow = MaterialTheme.colorScheme.scrim
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -96,7 +99,7 @@ internal actual fun FloatingNavigationBar(
         Row(
             modifier = Modifier
                 .height(dockHeight)
-                .shadow(14.dp, capsule, clip = false, ambientColor = Color.Black, spotColor = Color.Black)
+                .shadow(14.dp, capsule, clip = false, ambientColor = dockShadow, spotColor = dockShadow)
                 .clip(capsule)
                 .then(
                     if (hazeState != null) {
@@ -105,10 +108,10 @@ internal actual fun FloatingNavigationBar(
                         Modifier
                     },
                 )
-                .background(Color.Black.copy(alpha = if (hazeState != null) 0.62f else 0.92f))
+                .background(dockSurface.copy(alpha = if (hazeState != null) 0.62f else 0.94f))
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.06f))),
+                    Brush.verticalGradient(listOf(dockBorder.copy(alpha = 0.30f), dockBorder.copy(alpha = 0.06f))),
                     capsule,
                 )
                 .padding(horizontal = 6.dp)
@@ -126,12 +129,15 @@ internal actual fun FloatingNavigationBar(
 @Composable
 private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
     val on = item.selected
+    val pillColor = MaterialTheme.colorScheme.primary
+    val onPillColor = MaterialTheme.colorScheme.onPrimary
+    val idleTint = MaterialTheme.colorScheme.onSurfaceVariant
     val tint by animateColorAsState(
-        targetValue = if (on) Color.Black else Color.White.copy(alpha = 0.62f),
+        targetValue = if (on) onPillColor else idleTint,
         label = "dock_tint",
     )
     val bg by animateColorAsState(
-        targetValue = if (on) Color.White else Color.Transparent,
+        targetValue = if (on) pillColor else Color.Transparent,
         label = "dock_bg",
     )
     val morph by animateFloatAsState(
@@ -149,7 +155,7 @@ private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
             .widthIn(min = 44.dp)
             .then(
                 if (on) {
-                    Modifier.shadow(10.dp, shape, clip = false, ambientColor = Color.White, spotColor = Color.White)
+                    Modifier.shadow(10.dp, shape, clip = false, ambientColor = pillColor, spotColor = pillColor)
                 } else {
                     Modifier
                 },
@@ -174,7 +180,7 @@ private fun CinemaDockSlot(item: FloatingNavigationItem, compactSize: Boolean) {
         if (on) {
             Text(
                 text = item.label,
-                color = Color.Black,
+                color = onPillColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.2.sp,

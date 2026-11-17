@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -109,37 +110,38 @@ private fun DrawScope.strokeDraw(
     shape: DrawablePath,
     progress: Float,
     width: Float,
+    ink: Color,
     alpha: Float = 1f,
     cap: StrokeCap = StrokeCap.Butt,
 ) {
     if (progress <= 0f) return
     drawPath(
         shape.segment(progress),
-        color = Color.White.copy(alpha = alpha),
+        color = ink.copy(alpha = alpha),
         style = Stroke(width = width, cap = cap, join = StrokeJoin.Round),
     )
 }
 
 /** Outline that draws on, with a faint halo and a bright spark riding the leading edge. */
-private fun DrawScope.drawOutline(shape: DrawablePath, progress: Float) {
+private fun DrawScope.drawOutline(shape: DrawablePath, progress: Float, ink: Color) {
     if (progress <= 0f) return
-    strokeDraw(shape, progress, 6f, alpha = 0.18f)
-    strokeDraw(shape, progress, 2.2f)
+    strokeDraw(shape, progress, 6f, ink, alpha = 0.18f)
+    strokeDraw(shape, progress, 2.2f, ink)
     if (progress < 0.98f) {
         val tail = (progress - 0.035f).coerceAtLeast(0f)
         // short bright dash from tail to head
         val seg = Path()
         val m = PathMeasure().also { it.setPath(shape.path, false) }
         m.getSegment(m.length * tail, m.length * progress, seg, true)
-        drawPath(seg, Color.White, style = Stroke(width = 4.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(seg, ink, style = Stroke(width = 4.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 
-private fun DrawScope.drawStripe(stripe: Stripe, t: Float) {
+private fun DrawScope.drawStripe(stripe: Stripe, t: Float, ink: Color) {
     val p = frac(t, stripe.delay, 300f, EaseDraw)
     val f = frac(t, stripe.fillDelay, 380f)
-    if (f > 0f) drawPath(stripe.shape.path, Color.White.copy(alpha = f), style = Fill)
-    strokeDraw(stripe.shape, p, 2.2f)
+    if (f > 0f) drawPath(stripe.shape.path, ink.copy(alpha = f), style = Fill)
+    strokeDraw(stripe.shape, p, 2.2f, ink)
 }
 
 @Composable
@@ -151,7 +153,9 @@ internal fun CinemaOsSplash(modifier: Modifier = Modifier) {
     val geometry = remember { ClapperGeometry() }
     val word = remember { listOf('C', 'I', 'N', 'E', 'M', 'A', 'O', 'S') }
 
-    BoxWithConstraints(modifier = modifier.background(Color.Black)) {
+    val ink = MaterialTheme.colorScheme.onBackground
+    val canvasColor = MaterialTheme.colorScheme.background
+    BoxWithConstraints(modifier = modifier.background(canvasColor)) {
         val u = minOf(maxWidth.value / 100f, maxHeight.value * 1.9f / 100f)
         val clapW = (40f * u).dp
         val clapH = clapW * (100f / 120f)
@@ -166,7 +170,7 @@ internal fun CinemaOsSplash(modifier: Modifier = Modifier) {
             val cy = size.height * 0.44f
             val clapPx = clapW.toPx()
             listOf(2.6f to 0.02f, 1.9f to 0.03f, 1.3f to 0.04f).forEach { (k, al) ->
-                drawCircle(Color.White.copy(alpha = al * a), radius = clapPx * k * 0.5f, center = Offset(cx, cy))
+                drawCircle(ink.copy(alpha = al * a), radius = clapPx * k * 0.5f, center = Offset(cx, cy))
             }
         }
 
@@ -180,22 +184,22 @@ internal fun CinemaOsSplash(modifier: Modifier = Modifier) {
                 val t = clock.value
                 val k = size.width / 120f
                 withTransform({ scale(k, k, pivot = Offset.Zero) }) {
-                    drawOutline(geometry.body, frac(t, 0f, 900f, EaseDraw))
-                    strokeDraw(geometry.band, frac(t, 520f, 420f, EaseDraw), 2.2f, cap = StrokeCap.Round)
-                    geometry.bandStripes.forEach { drawStripe(it, t) }
-                    strokeDraw(geometry.slate1, frac(t, 880f, 420f, EaseDraw), 1f, alpha = 0.45f, cap = StrokeCap.Round)
-                    strokeDraw(geometry.slate2, frac(t, 940f, 420f, EaseDraw), 1f, alpha = 0.45f, cap = StrokeCap.Round)
-                    strokeDraw(geometry.divider, frac(t, 1000f, 300f, EaseDraw), 1f, alpha = 0.45f, cap = StrokeCap.Round)
+                    drawOutline(geometry.body, frac(t, 0f, 900f, EaseDraw), ink)
+                    strokeDraw(geometry.band, frac(t, 520f, 420f, EaseDraw), 2.2f, ink, cap = StrokeCap.Round)
+                    geometry.bandStripes.forEach { drawStripe(it, t, ink) }
+                    strokeDraw(geometry.slate1, frac(t, 880f, 420f, EaseDraw), 1f, ink, alpha = 0.45f, cap = StrokeCap.Round)
+                    strokeDraw(geometry.slate2, frac(t, 940f, 420f, EaseDraw), 1f, ink, alpha = 0.45f, cap = StrokeCap.Round)
+                    strokeDraw(geometry.divider, frac(t, 1000f, 300f, EaseDraw), 1f, ink, alpha = 0.45f, cap = StrokeCap.Round)
 
                     // arm: starts raised, claps shut, rebounds, settles slightly open (degrees, negative = up)
                     val armAngle = armAngleAt(t)
                     rotate(degrees = armAngle, pivot = Offset(13f, 43f)) {
-                        drawOutline(geometry.arm, frac(t, 450f, 650f, EaseDraw))
-                        geometry.armStripes.forEach { drawStripe(it, t) }
+                        drawOutline(geometry.arm, frac(t, 450f, 650f, EaseDraw), ink)
+                        geometry.armStripes.forEach { drawStripe(it, t, ink) }
                         val hp = frac(t, 1050f, 250f, EaseDraw)
                         if (hp > 0f) {
-                            drawPath(geometry.hinge.path, Color.Black, style = Fill)
-                            strokeDraw(geometry.hinge, hp, 2.2f)
+                            drawPath(geometry.hinge.path, canvasColor, style = Fill)
+                            strokeDraw(geometry.hinge, hp, 2.2f, ink)
                         }
                     }
                 }
@@ -209,7 +213,7 @@ internal fun CinemaOsSplash(modifier: Modifier = Modifier) {
                     Box(Modifier.height((fontSize * 1.2f).dp).clipToBounds()) {
                         Text(
                             text = ch.toString(),
-                            color = Color.White,
+                            color = ink,
                             fontSize = fontSize.sp,
                             lineHeight = (fontSize * 1.2f).sp,
                             letterSpacing = 2.sp,
@@ -227,7 +231,7 @@ internal fun CinemaOsSplash(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(gap * 0.55f))
             Text(
                 text = "MOVIES · SHOWS · ANIME",
-                color = Color.White.copy(alpha = 0.5f),
+                color = ink.copy(alpha = 0.5f),
                 fontSize = (2.3f * u).sp,
                 letterSpacing = 6.sp,
                 maxLines = 1,
@@ -244,13 +248,13 @@ internal fun CinemaOsSplash(modifier: Modifier = Modifier) {
                 t < 1760f -> 0.16f * (1f - (t - 1370f) / 390f)
                 else -> 0f
             }
-            if (flash > 0f) drawRect(Color.White.copy(alpha = flash))
+            if (flash > 0f) drawRect(ink.copy(alpha = flash))
             drawRect(
                 Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = 0.8f),
+                    0f to canvasColor.copy(alpha = 0.8f),
                     0.28f to Color.Transparent,
                     0.72f to Color.Transparent,
-                    1f to Color.Black.copy(alpha = 0.8f),
+                    1f to canvasColor.copy(alpha = 0.8f),
                 ),
             )
         }

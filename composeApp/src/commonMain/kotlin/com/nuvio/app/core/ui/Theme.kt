@@ -19,15 +19,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.sp
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.jetbrains_sans_bold
 import nuvio.composeapp.generated.resources.jetbrains_sans_regular
 import nuvio.composeapp.generated.resources.jetbrains_sans_semibold
 import org.jetbrains.compose.resources.Font
 
-val LocalAppTheme = staticCompositionLocalOf { AppTheme.WHITE }
-val LocalThemePalette = staticCompositionLocalOf { ThemeColors.White }
+val LocalAppTheme = staticCompositionLocalOf { AppTheme.CINEMAOS }
+val LocalThemePalette = staticCompositionLocalOf { ThemeColors.CinemaOs }
 
 val MaterialTheme.themePalette: ThemeColorPalette
     @Composable
@@ -42,28 +41,20 @@ val MaterialTheme.appTheme: AppTheme
 private fun contentColorFor(background: Color): Color =
     if (background.luminance() > 0.5f) Color(0xFF111111) else Color(0xFFF5F7F8)
 
-/** Keeps the declared content color unless it would be unreadable on a light/dark container. */
-private fun readableOn(container: Color, declared: Color): Color =
-    if (kotlin.math.abs(container.luminance() - declared.luminance()) < 0.35f) {
-        if (container.luminance() > 0.5f) Color(0xFF111111) else Color.White
-    } else {
-        declared
-    }
-
 private fun buildColorScheme(palette: ThemeColorPalette, amoled: Boolean = false) = darkColorScheme(
     primary = palette.secondary,
-    onPrimary = readableOn(palette.secondary, palette.onSecondary),
+    onPrimary = palette.onSecondary,
     primaryContainer = palette.focusBackground,
     onPrimaryContainer = contentColorFor(palette.focusBackground),
     secondary = palette.secondaryVariant,
-    onSecondary = readableOn(palette.secondaryVariant, palette.onSecondaryVariant),
+    onSecondary = palette.onSecondaryVariant,
     background = if (amoled) Color.Black else palette.background,
-    onBackground = Color(0xFFFAFAFA),
+    onBackground = Color(0xFFF5F7F8),
     surface = palette.backgroundElevated,
-    onSurface = Color(0xFFFAFAFA),
+    onSurface = Color(0xFFF5F7F8),
     surfaceVariant = palette.backgroundCard,
-    onSurfaceVariant = Color(0xFFA1A1AA),
-    outline = Color(0xFF27272A),
+    onSurfaceVariant = Color(0xFF969CA3),
+    outline = Color(0xFF252A2A),
     error = Color(0xFFE36A8A),
     onError = Color(0xFFFCE5EC),
 )
@@ -97,8 +88,7 @@ private val NuvioTypography: Typography
             fontFamily = JetBrainsSans,
             fontSize = NuvioTokens.Type.titleSm,
             lineHeight = NuvioTokens.LineHeight.materialTitleLarge,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.3).sp,
+            fontWeight = FontWeight.SemiBold,
         ),
         titleMedium = TextStyle(
             fontFamily = JetBrainsSans,
@@ -205,7 +195,7 @@ private val NuvioRippleConfiguration = RippleConfiguration(
 @Composable
 fun NuvioTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    appTheme: AppTheme = AppTheme.WHITE,
+    appTheme: AppTheme = AppTheme.CINEMAOS,
     amoled: Boolean = false,
     customThemeColors: CustomThemeColors = CustomThemeColors.Default,
     content: @Composable () -> Unit,

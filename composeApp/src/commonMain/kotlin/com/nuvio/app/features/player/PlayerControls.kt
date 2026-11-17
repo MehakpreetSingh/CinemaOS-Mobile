@@ -180,7 +180,7 @@ internal fun PlayerControlsShell(
         )
         return
     }
-    // CinemaOS website player layout (both the default and the legacy setting use it).
+    // CinemaOS: Cinemaos-V3 arrangement composed from the standard player components.
     CinemaosPlayerControls(
         title = title,
         seasonNumber = seasonNumber,
@@ -188,7 +188,9 @@ internal fun PlayerControlsShell(
         episodeTitle = episodeTitle,
         playbackSnapshot = playbackSnapshot,
         displayedPositionMs = displayedPositionMs,
+        metrics = metrics,
         resizeMode = resizeMode,
+        isLocked = isLocked,
         chapters = chapters,
         showPlaybackControls = showPlaybackControls,
         horizontalSafePadding = horizontalSafePadding,
@@ -612,8 +614,7 @@ internal fun PlayerHeaderIconButton(
         modifier = Modifier
             .size(buttonSize)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.40f))
-            .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+            .background(Color.Black.copy(alpha = 0.35f))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -627,7 +628,7 @@ internal fun PlayerHeaderIconButton(
 }
 
 @Composable
-private fun CenterControls(
+internal fun CenterControls(
     snapshot: PlayerPlaybackSnapshot,
     metrics: PlayerLayoutMetrics,
     onSeekBack: () -> Unit,

@@ -706,7 +706,7 @@ private fun ContinueWatchingCard(
     }
     val episodeTitle = localizedEpisodeTitle(item.episodeTitle, item.episodeNumber) ?: airDateText
     val badgeText = continueWatchingCardBadgeText(item = item, airDateText = airDateText)
-    val backgroundColor = Color.Black
+    val backgroundColor = MaterialTheme.colorScheme.background
     val badgeBackground = continueWatchingBadgeBackground(item)
 
     Box(
@@ -832,13 +832,13 @@ private fun ContinueWatchingCard(
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
                     .height(4.dp)
-                    .background(Color.White.copy(alpha = 0.2f)),
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(item.progressFraction.coerceIn(0f, 1f))
                         .fillMaxHeight()
-                        .background(Color.White),
+                        .background(MaterialTheme.colorScheme.primary),
                 )
             }
         }
