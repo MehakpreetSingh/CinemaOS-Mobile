@@ -345,7 +345,7 @@ internal fun CinemaosPlayerControls(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
-                                NuvioLoadingIndicator(modifier = Modifier.size(playIconSizeLarge))
+                                CinemaosGradientLoader(modifier = Modifier.size(playIconSizeLarge))
                             }
                         } else {
                             CinemaosCenterButton(

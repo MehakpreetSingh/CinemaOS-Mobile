@@ -387,6 +387,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
     val playerBadges = rememberPlayerBadges()
     val awaitingFirstFrame = (activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null) &&
         !initialLoadCompleted && errorMessage == null
+    val bufferingNow = activeSourceUrl.isNotBlank() && playbackSnapshot.isLoading && errorMessage == null
     LaunchedEffect(folded) {
         if (folded) {
             controlsVisible = true
@@ -394,7 +395,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
         }
     }
     AnimatedVisibility(
-        visible = (controlsVisible || folded || showParentalGuide || awaitingFirstFrame) && !playerControlsLocked && !isInPip &&
+        visible = (controlsVisible || folded || showParentalGuide || awaitingFirstFrame || bufferingNow) && !playerControlsLocked && !isInPip &&
             !(folded && isPanelOpen),
         enter = fadeIn(),
         exit = fadeOut(),
@@ -423,7 +424,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
                 }
             } else null,
             onInteraction = { controlsActivityTick += 1 },
-            showPlaybackControls = controlsVisible || awaitingFirstFrame,
+            showPlaybackControls = controlsVisible || awaitingFirstFrame || bufferingNow,
             awaitingFirstFrame = awaitingFirstFrame,
             loadingMessage = if (playerSettingsUiState.showPlayerLoadingStatus && awaitingFirstFrame) {
                 if (sourceFallbackAttempts > 0) {
