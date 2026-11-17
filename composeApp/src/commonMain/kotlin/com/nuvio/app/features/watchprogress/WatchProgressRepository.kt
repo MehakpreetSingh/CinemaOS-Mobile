@@ -5,6 +5,7 @@ import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.tracking.ensureTrackingProvidersRegistered
 import com.nuvio.app.features.addons.AddonManifest
+import com.nuvio.app.features.cinemaos.CinemaOsAccount
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.AddonsUiState
 import com.nuvio.app.features.addons.enabledAddons
@@ -1187,6 +1188,30 @@ object WatchProgressRepository {
         }
     }
 
+    /** Local snapshot used by the CinemaOS cloud sync to detect existing rows. */
+    internal fun cinemaOsLocalEntries(): List<WatchProgressEntry> {
+        ensureLoaded()
+        return localEntriesSnapshot()
+    }
+
+    /** Removes rows deleted on another device without echoing the delete back to any server. */
+    internal fun removeExternalProgress(
+        contentId: String,
+        seasonNumber: Int?,
+        episodeNumber: Int?,
+    ) {
+        ensureLoaded()
+        val toRemove = localEntriesSnapshot().filter { entry ->
+            entry.parentMetaId == contentId &&
+                (seasonNumber == null || episodeNumber == null ||
+                    (entry.seasonNumber == seasonNumber && entry.episodeNumber == episodeNumber))
+        }
+        if (toRemove.isEmpty()) return
+        toRemove.forEach { removeLocalEntry(it.resolvedProgressKey()) }
+        publish()
+        persist()
+    }
+
     fun clearProgress(videoId: String, parentMetaId: String? = null) {
         clearProgress(videoIds = listOf(videoId), parentMetaId = parentMetaId)
     }
@@ -1463,6 +1488,7 @@ object WatchProgressRepository {
 
     private fun pushScrobbleToServer(entry: WatchProgressEntry, profileId: Int) {
         if (ServerItemRef.isServerId(entry.parentMetaId)) return
+        CinemaOsAccount.service.onProgressSaved(entry)
         val operationGeneration = profileGeneration.takeIf { profileId == currentProfileId }
         accountScopeSnapshot().launch {
             runCatching {
@@ -1481,6 +1507,7 @@ object WatchProgressRepository {
     private fun pushDeleteToServer(entries: Collection<WatchProgressEntry>) {
         if (activeSource.providerId != null) return
         val entries = entries.filterNot { ServerItemRef.isServerId(it.parentMetaId) }
+        if (entries.isNotEmpty()) CinemaOsAccount.service.onProgressRemoved(entries)
         val profileId = currentProfileId
         accountScopeSnapshot().launch {
             runCatching {

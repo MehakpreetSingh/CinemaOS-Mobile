@@ -74,6 +74,8 @@ private fun AccountSettingsBody(
     val canDeleteAccount = AppFeaturePolicy.accountDeletionEnabled && authState is AuthState.Authenticated
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        CinemaOsAccountCard()
+
         NuvioSurfaceCard {
             Text(
                 text = stringResource(Res.string.compose_settings_page_account),

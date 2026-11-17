@@ -13,6 +13,8 @@ import coil3.request.crossfade
 import coil3.svg.SvgDecoder
 import com.nuvio.app.core.network.NetworkErrorInterceptor
 import com.nuvio.app.core.poster.CustomPosterFallbackInterceptor
+import com.nuvio.app.features.cinemaos.AndroidCinemaOsAccountService
+import com.nuvio.app.features.cinemaos.CinemaOsAccount
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 
@@ -23,6 +25,13 @@ import io.ktor.client.engine.okhttp.OkHttp
  * before MainActivity.onCreate, and interceptors registered later are ignored.
  */
 class NuvioApplication : Application(), SingletonImageLoader.Factory {
+
+    override fun onCreate() {
+        super.onCreate()
+        val cinemaOs = AndroidCinemaOsAccountService(this)
+        CinemaOsAccount.service = cinemaOs
+        cinemaOs.start()
+    }
 
     override fun newImageLoader(context: android.content.Context): ImageLoader {
         return ImageLoader.Builder(context)

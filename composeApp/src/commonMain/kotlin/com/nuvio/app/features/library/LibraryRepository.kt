@@ -11,6 +11,7 @@ import com.nuvio.app.features.library.sync.libraryDeltaPageSize
 import com.nuvio.app.features.library.sync.librarySnapshotPageSize
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.core.poster.CustomPosterUrlRepository
+import com.nuvio.app.features.cinemaos.CinemaOsAccount
 import com.nuvio.app.features.servers.ServerItemRef
 import com.nuvio.app.features.tracking.TrackingLibraryProvider
 import com.nuvio.app.features.tracking.TrackingLibraryTab
@@ -342,10 +343,15 @@ object LibraryRepository {
         persist(result.snapshot)
         publish()
         pushToServer(result.snapshot)
+        CinemaOsAccount.service.onLibraryChanged(item, result.isSaved)
         return TrackingMembershipApplyResult()
     }
 
     fun save(item: LibraryItem) {
+        saveInternal(item, notifyCinemaOs = true)
+    }
+
+    private fun saveInternal(item: LibraryItem, notifyCinemaOs: Boolean) {
         ensureLoaded()
         val snapshot = localState.upsert(item.copy(savedAtEpochMs = LibraryClock.nowEpochMs()))
         log.i {
@@ -354,12 +360,31 @@ object LibraryRepository {
         persist(snapshot)
         publish()
         pushToServer(snapshot)
+        if (notifyCinemaOs) CinemaOsAccount.service.onLibraryChanged(item, true)
+    }
+
+    /** Local-store membership, used by the CinemaOS cloud sync. */
+    internal fun cinemaOsHasLocal(id: String, type: String): Boolean {
+        ensureLoaded()
+        return localState.contains(id, type)
+    }
+
+    /** Applies a watchlist row pulled from cinemaos.tech without echoing it back. */
+    internal fun cinemaOsSave(item: LibraryItem) {
+        saveInternal(item, notifyCinemaOs = false)
+    }
+
+    /** Applies a watchlist removal pulled from cinemaos.tech without echoing it back. */
+    internal fun cinemaOsRemove(id: String, type: String) {
+        removeInternal(id, type, notifyCinemaOs = false)
     }
 
     fun remove(id: String) {
         ensureLoaded()
+        val existing = localState.findById(id)
         val result = localState.removeById(id)
         if (result.affectedCount > 0) {
+            existing?.let { CinemaOsAccount.service.onLibraryChanged(it, false) }
             log.i {
                 "Removing local library item id=$id profile=${result.snapshot.token.profileId} " +
                     "removed=${result.affectedCount}"
@@ -371,9 +396,15 @@ object LibraryRepository {
     }
 
     private fun remove(id: String, type: String) {
+        removeInternal(id, type, notifyCinemaOs = true)
+    }
+
+    private fun removeInternal(id: String, type: String, notifyCinemaOs: Boolean) {
         ensureLoaded()
+        val existing = localState.findById(id)?.takeIf { it.type == type }
         val result = localState.remove(id, type)
         if (result.affectedCount > 0) {
+            if (notifyCinemaOs) existing?.let { CinemaOsAccount.service.onLibraryChanged(it, false) }
             log.i {
                 "Removing local library item id=$id type=$type profile=${result.snapshot.token.profileId}"
             }
