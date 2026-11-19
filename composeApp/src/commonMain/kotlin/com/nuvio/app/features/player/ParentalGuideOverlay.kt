@@ -44,7 +44,8 @@ internal fun ParentalGuideOverlay(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(start = 32.dp, top = 24.dp),
 ) {
-    if (warnings.isEmpty()) return
+    // Leaving composition cancels the animation, so the warnings vanish the moment they are hidden.
+    if (warnings.isEmpty() || !isVisible) return
 
     val count = warnings.size
     val totalLineHeight = (ParentalGuideRowHeight.value * count) +

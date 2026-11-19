@@ -58,11 +58,17 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
     val displayedPositionMs = scrubbingPositionMs ?: playbackSnapshot.positionMs
     val isEpisode = activeSeasonNumber != null && activeEpisodeNumber != null
     val introKey = "${activeVideoId ?: parentMetaId ?: title}:$activeSeasonNumber:$activeEpisodeNumber"
+    // Same logo the loading screen shows.
+    val nowPlayingLogo = logo ?: metaUiState.meta?.logo
     val (introVisible, introComplete) = rememberPlaybackTitleIntro(
         contentKey = introKey,
         ready = playbackSnapshot.isPlaying && !playbackSnapshot.isLoading && !controlsVisible &&
             !isPanelOpen && !isInPip && errorMessage == null,
     )
+    // As in the React Native player: showing the controls ends the warnings for this title.
+    LaunchedEffect(controlsVisible) {
+        if (controlsVisible && showParentalGuide && introComplete) showParentalGuide = false
+    }
     val currentGestureFeedback = liveGestureFeedback ?: gestureFeedback
     val isP2pPlaybackActive = activeTorrentInfoHash != null
     val p2pConnecting = p2pStreamingState as? P2pStreamingState.Connecting
@@ -323,7 +329,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
                 title = title,
                 episode = if (isEpisode) "S$activeSeasonNumber E$activeEpisodeNumber${activeEpisodeTitle?.let { " · $it" }.orEmpty()}" else null,
                 visible = introVisible,
-                logoUrl = metaUiState.meta?.logo,
+                logoUrl = nowPlayingLogo,
                 metaLine = metaUiState.meta?.let { playbackTitleMetaLine(it.releaseInfo, it.genres, it.runtime) }.orEmpty(),
                 rating = metaUiState.meta?.imdbRating,
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 48.dp, top = 44.dp),
