@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="compose_nav_sports">Sports</string>
+    <string name="compose_nav_sports">Live TV</string>
     <string name="sports_live_badge">LIVE</string>
     <string name="sports_row_live">🔴 Live Now</string>
     <string name="sports_row_upcoming">⏱️ Upcoming</string>

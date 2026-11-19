@@ -181,7 +181,7 @@ fun SportsScreen(
         sportsAddon?.manifest?.catalogs?.associateBy { it.id }
     }
 
-    var selectedFilterName by rememberSaveable { mutableStateOf(SportFilter.All.name) }
+    var selectedFilterName by rememberSaveable { mutableStateOf(SportFilter.LiveTv.name) }
     val selectedFilter = remember(selectedFilterName) {
         SportFilter.entries.firstOrNull { it.name == selectedFilterName } ?: SportFilter.All
     }
@@ -512,6 +512,7 @@ private fun SportsRowSection(
         Box {
             HomePosterCard(
                 item = displayItem,
+                showLandscapeOverlay = false,
                 useLandscapeBackdropMode = posterCardStyle.catalogLandscapeModeEnabled,
                 onClick = onPosterClick?.let { { it(item) } },
                 onLongClick = onPosterLongClick?.let { { it(item) } },
@@ -681,6 +682,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.liveTvContent(
                     Box(modifier = Modifier.weight(1f)) {
                         HomePosterCard(
                             item = item,
+                            showLandscapeOverlay = false,
                             modifier = Modifier.fillMaxWidth(),
                             onClick = onPosterClick?.let { { it(item) } },
                             onLongClick = onPosterLongClick?.let { { it(item) } },
