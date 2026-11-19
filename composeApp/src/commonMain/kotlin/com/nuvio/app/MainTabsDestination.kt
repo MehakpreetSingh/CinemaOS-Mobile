@@ -43,6 +43,7 @@ import nuvio.composeapp.generated.resources.compose_nav_home
 import nuvio.composeapp.generated.resources.compose_nav_library
 import nuvio.composeapp.generated.resources.compose_nav_profile
 import nuvio.composeapp.generated.resources.compose_nav_search
+import nuvio.composeapp.generated.resources.compose_nav_sports
 import nuvio.composeapp.generated.resources.dock_anime
 import nuvio.composeapp.generated.resources.dock_home
 import nuvio.composeapp.generated.resources.dock_library
@@ -107,6 +108,12 @@ internal fun MainTabsDestination(
                 onClick = { onTabSelected(AppScreenTab.Anime) },
                 morph = DockIconKind.Anime,
                 label = stringResource(Res.string.compose_nav_anime),
+            ),
+            FloatingNavigationItem(
+                selected = selectedTab == AppScreenTab.Sports,
+                onClick = { onTabSelected(AppScreenTab.Sports) },
+                morph = DockIconKind.Sports,
+                label = stringResource(Res.string.compose_nav_sports),
             ),
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Settings,

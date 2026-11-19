@@ -6,6 +6,7 @@ import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.addons.isAnimeKitsuAddon
+import com.nuvio.app.features.addons.withoutBuiltInCatalogAddons
 import com.nuvio.app.features.catalog.supportsPagination
 import com.nuvio.app.features.servers.ServerCatalog
 import kotlinx.coroutines.runBlocking
@@ -34,7 +35,7 @@ data class HomeCatalogDefinition(
 }
 
 fun buildAddonCatalogRefreshSignature(addons: List<ManagedAddon>): List<String> =
-    addons.enabledAddons().map { addon ->
+    addons.enabledAddons().withoutBuiltInCatalogAddons().map { addon ->
         val signature = CatalogDescriptorSignature()
         signature.addAddon(addon)
         addon.manifest?.let { manifest ->
@@ -45,7 +46,8 @@ fun buildAddonCatalogRefreshSignature(addons: List<ManagedAddon>): List<String> 
     }.sorted()
 
 fun buildHomeCatalogDefinitions(addons: List<ManagedAddon>): List<HomeCatalogDefinition> =
-    addons.enabledAddons().filterNot { it.isAnimeKitsuAddon() }.mapNotNull { addon ->
+    // Anime Kitsu rows live on the Anime tab and the built-in Live Sports rows only on the Sports tab.
+    addons.enabledAddons().withoutBuiltInCatalogAddons().filterNot { it.isAnimeKitsuAddon() }.mapNotNull { addon ->
         val manifest = addon.manifest ?: return@mapNotNull null
         addon to manifest
     }.flatMap { (addon, manifest) ->

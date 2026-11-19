@@ -3,6 +3,8 @@ package com.nuvio.app.features.streams
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.addons.fetchAddonResponseText
+import com.nuvio.app.features.sports.isSportsAddonManifest
+import com.nuvio.app.features.sports.sanitizeSportsStreams
 import com.nuvio.app.features.debrid.LocalDebridAvailabilityService
 import com.nuvio.app.features.plugins.PluginRepository
 import com.nuvio.app.features.plugins.pluginContentId
@@ -254,7 +256,10 @@ private fun CoroutineScope.launchStreamSearchTasks(
                     addonName = addon.addonName,
                     addonId = addon.addonId,
                     addonLogo = addon.manifest.logoUrl,
-                )
+                ).let { streams ->
+                    // Built-in Live Sports streams: no addon name/logo and no donation (external-only) entries.
+                    if (addon.manifest.isSportsAddonManifest()) streams.sanitizeSportsStreams() else streams
+                }
             }.fold(
                 onSuccess = { streams ->
                     log.d { "Got ${streams.size} streams from ${addon.addonName}" }

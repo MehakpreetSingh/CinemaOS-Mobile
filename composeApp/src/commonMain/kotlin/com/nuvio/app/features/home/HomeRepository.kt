@@ -1,6 +1,7 @@
 package com.nuvio.app.features.home
 
 import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.features.addons.withoutBuiltInCatalogAddons
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.catalog.CatalogTarget
@@ -48,7 +49,8 @@ object HomeRepository {
     private var lastErrorMessage: String? = null
 
     fun refresh(addons: List<ManagedAddon>, force: Boolean = false) {
-        val activeAddons = addons.enabledAddons()
+        // The built-in Live Sports addon's catalogs belong to the Sports tab only.
+        val activeAddons = addons.enabledAddons().withoutBuiltInCatalogAddons()
         val requests = buildHomeCatalogDefinitions(activeAddons)
         currentDefinitions = requests
         val requestCacheKeys = requests.mapTo(mutableSetOf(), HomeCatalogDefinition::cacheKey)

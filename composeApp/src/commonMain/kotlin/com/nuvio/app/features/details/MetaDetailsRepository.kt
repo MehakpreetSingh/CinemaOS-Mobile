@@ -5,6 +5,8 @@ import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.features.sports.isSportsAddonManifest
+import com.nuvio.app.features.sports.withoutSportsBranding
 import com.nuvio.app.features.addons.fetchAddonResponseText
 import com.nuvio.app.core.poster.withCustomPosterUrls
 import com.nuvio.app.features.addons.supportsResource
@@ -293,6 +295,10 @@ object MetaDetailsRepository {
             val payload = fetchAddonResponseText(url)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
             val result = MetaDetailsParser.parse(payload)
+            if (manifest.isSportsAddonManifest()) {
+                // Live sports events and channels have no TMDB / MDBList entry; only strip the addon branding.
+                return result.withoutSportsBranding()
+            }
             val tmdbEnriched = withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
                 TmdbMetadataService.enrichMeta(
                     meta = result,

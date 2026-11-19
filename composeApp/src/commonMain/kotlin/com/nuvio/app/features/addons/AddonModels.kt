@@ -1,5 +1,6 @@
 package com.nuvio.app.features.addons
 
+import com.nuvio.app.features.sports.isSportsAddon
 import kotlinx.coroutines.runBlocking
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.generic_addon
@@ -101,6 +102,13 @@ internal fun List<ManagedAddon>.toOverview(): AddonOverview =
 fun ManagedAddon.isAnimeKitsuAddon(): Boolean =
     manifestUrl.contains("anime-kitsu", ignoreCase = true) ||
         manifest?.id?.contains("kitsu", ignoreCase = true) == true
+
+/** Built-in addons (Live Sports) are always installed, hidden from addon settings and never synced. */
+fun ManagedAddon.isBuiltInAddon(): Boolean = isSportsAddon()
+
+/** Addons whose catalogs may appear in shared catalog lists (Home, Search, Discover, collections). */
+internal fun List<ManagedAddon>.withoutBuiltInCatalogAddons(): List<ManagedAddon> =
+    filterNot { it.isBuiltInAddon() }
 
 internal fun List<ManagedAddon>.enabledAddons(): List<ManagedAddon> =
     filter { it.enabled }

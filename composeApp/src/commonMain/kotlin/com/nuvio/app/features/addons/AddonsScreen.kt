@@ -98,7 +98,9 @@ internal fun AddonsSettingsPageContent(
     val enterAddonUrlMessage = stringResource(Res.string.addons_error_enter_url)
     val usePersonalMediaCopy = AppFeaturePolicy.personalMediaAddonCopyEnabled
 
-    val overview = remember(uiState.addons) { uiState.addons.toOverview() }
+    // Built-in addons (Live Sports) stay installed and are never listed here; they are always last in the list.
+    val visibleAddons = remember(uiState.addons) { uiState.addons.filterNot { it.isBuiltInAddon() } }
+    val overview = remember(visibleAddons) { visibleAddons.toOverview() }
 
     Column(
         modifier = modifier,
@@ -147,11 +149,11 @@ internal fun AddonsSettingsPageContent(
         )
 
         SectionHeader(stringResource(Res.string.addons_section_installed))
-        if (uiState.addons.isEmpty()) {
+        if (visibleAddons.isEmpty()) {
             EmptyStateCard(usePersonalMediaCopy = usePersonalMediaCopy)
         } else {
-            val lastIndex = uiState.addons.lastIndex
-            uiState.addons.forEachIndexed { index, addon ->
+            val lastIndex = visibleAddons.lastIndex
+            visibleAddons.forEachIndexed { index, addon ->
                 val manifest = addon.manifest
                 val behaviorHints = manifest?.behaviorHints
                 val showConfigureAction = behaviorHints?.configurable == true || behaviorHints?.configurationRequired == true

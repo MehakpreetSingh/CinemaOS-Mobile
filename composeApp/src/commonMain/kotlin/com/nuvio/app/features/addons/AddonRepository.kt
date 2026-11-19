@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.core.sync.putSyncOriginClientId
 import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.sports.SportsAddon
+import com.nuvio.app.features.sports.withSportsBrandingRemoved
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
@@ -75,6 +77,7 @@ object AddonRepository {
         log.d { "initialize() — loading local addons for profile $currentProfileId" }
 
         var storedUrls = dedupeManifestUrls(AddonStorage.loadInstalledAddonUrls(currentProfileId))
+            .filterNot(::isBuiltInAddonUrl)
         val enabledByUrl = loadLocalEnabledStates().toMutableMap()
         if (!AddonStorage.loadDefaultsSeeded(currentProfileId)) {
             val missing = CINEMAOS_DEFAULT_ADDON_URLS
@@ -87,17 +90,18 @@ object AddonRepository {
             AddonStorage.saveDefaultsSeeded(currentProfileId, true)
         }
         log.d { "initialize() — local addon count: ${storedUrls.size}" }
-        if (storedUrls.isEmpty()) return
 
-        val existingByUrl = _uiState.value.addons.associateBy(ManagedAddon::manifestUrl)
+        val previousAddons = _uiState.value.addons
+        val existingByUrl = previousAddons.associateBy(ManagedAddon::manifestUrl)
         _uiState.value = AddonsUiState(
             addons = storedUrls.map { manifestUrl ->
                 existingByUrl[manifestUrl].toPendingAddon(
                     manifestUrl = manifestUrl,
                     enabled = enabledByUrl[manifestUrl],
                 )
-            },
+            }.withBuiltInAddons(previousAddons),
         )
+        ensureBuiltInAddonsLoaded()
 
         storedUrls.forEach { manifestUrl ->
             val existing = existingByUrl[manifestUrl]
@@ -141,6 +145,7 @@ object AddonRepository {
             val rowsByUrl = linkedMapOf<String, AddonRow>()
             rows.forEach { row ->
                 val manifestUrl = ensureManifestSuffix(row.url)
+                if (isBuiltInAddonUrl(manifestUrl)) return@forEach
                 if (!rowsByUrl.containsKey(manifestUrl)) {
                     rowsByUrl[manifestUrl] = row.copy(url = manifestUrl)
                 }
@@ -150,7 +155,8 @@ object AddonRepository {
             log.i { "pullFromServer() — server returned ${rows.size} addons" }
             urls.forEachIndexed { i, u -> log.d { "  server[$i]: $u" } }
 
-            val existingByUrl = _uiState.value.addons.associateBy(ManagedAddon::manifestUrl)
+            val previousAddons = _uiState.value.addons
+            val existingByUrl = previousAddons.associateBy(ManagedAddon::manifestUrl)
             _uiState.value = AddonsUiState(
                 addons = urls.map { url ->
                     val row = rowsByUrl[url]
@@ -159,9 +165,10 @@ object AddonRepository {
                         userSetName = row?.name?.takeIf { it.isNotBlank() },
                         enabled = row?.enabled,
                     )
-                },
+                }.withBuiltInAddons(previousAddons),
             )
             persist()
+            ensureBuiltInAddonsLoaded()
             urls.forEach { url ->
                 val existing = existingByUrl[url]
                 val addon = _uiState.value.addons.firstOrNull { it.manifestUrl == url }
@@ -176,12 +183,14 @@ object AddonRepository {
         }
     }
 
+    /** Waits for the first user-installed manifest; the always-installed built-in addons are not waited on. */
     suspend fun awaitManifestsLoaded() {
-        if (_uiState.value.addons.isEmpty()) return
+        if (_uiState.value.addons.none { !it.isBuiltInAddon() }) return
         uiState.first { state ->
-            state.addons.isEmpty() ||
-                state.addons.any { it.manifest != null } ||
-                state.addons.none { it.isRefreshing }
+            val userAddons = state.addons.filterNot { it.isBuiltInAddon() }
+            userAddons.isEmpty() ||
+                userAddons.any { it.manifest != null } ||
+                userAddons.none { it.isRefreshing }
         }
     }
 
@@ -243,12 +252,14 @@ object AddonRepository {
     private fun installManifest(manifestUrl: String, manifest: AddonManifest): AddAddonResult {
         _uiState.update { current ->
             current.copy(
-                addons = current.addons + ManagedAddon(
-                    manifestUrl = manifestUrl,
-                    manifest = manifest,
-                    isRefreshing = false,
-                    errorMessage = null,
-                ),
+                addons = (
+                    current.addons + ManagedAddon(
+                        manifestUrl = manifestUrl,
+                        manifest = manifest,
+                        isRefreshing = false,
+                        errorMessage = null,
+                    )
+                    ).keepBuiltInAddonsLast(),
             )
         }
         persist()
@@ -258,6 +269,7 @@ object AddonRepository {
 
     fun removeAddon(manifestUrl: String) {
         if (isUsingPrimaryAddonsFromSecondaryProfile()) return
+        if (isBuiltInAddonUrl(manifestUrl)) return
         log.i { "removeAddon() — $manifestUrl" }
         var changed = false
         _uiState.update { current ->
@@ -283,11 +295,15 @@ object AddonRepository {
                 return@update current
             }
 
+            if (addons[fromIndex].isBuiltInAddon() || addons[toIndex].isBuiltInAddon()) {
+                return@update current
+            }
+
             val reordered = addons.toMutableList()
             val movingAddon = reordered.removeAt(fromIndex)
             reordered.add(toIndex, movingAddon)
             changed = true
-            current.copy(addons = reordered)
+            current.copy(addons = reordered.keepBuiltInAddonsLast())
         }
         if (!changed) return
         persist()
@@ -296,6 +312,7 @@ object AddonRepository {
 
     fun setAddonEnabled(manifestUrl: String, enabled: Boolean) {
         if (isUsingPrimaryAddonsFromSecondaryProfile()) return
+        if (isBuiltInAddonUrl(manifestUrl)) return
         var shouldRefresh = false
         var changed = false
         _uiState.update { current ->
@@ -347,7 +364,7 @@ object AddonRepository {
                     AddonManifestParser.parse(
                         manifestUrl = manifestUrl,
                         payload = payload,
-                    )
+                    ).withSportsBrandingRemoved()
                 }
 
                 _uiState.update { current ->
@@ -388,6 +405,7 @@ object AddonRepository {
         if (isUsingPrimaryAddonsFromSecondaryProfile()) return
         val profileId = currentProfileId
         val addons = _uiState.value.addons
+            .filterNot { it.isBuiltInAddon() }
             .distinctBy { it.manifestUrl }
             .mapIndexed { index, addon ->
                 AddonPushItem(
@@ -441,7 +459,7 @@ object AddonRepository {
     }
 
     private fun persist() {
-        val addons = _uiState.value.addons
+        val addons = _uiState.value.addons.filterNot { it.isBuiltInAddon() }
         AddonStorage.saveInstalledAddonUrls(
             currentProfileId,
             dedupeManifestUrls(addons.map { it.manifestUrl }),
@@ -450,6 +468,17 @@ object AddonRepository {
             currentProfileId,
             addons.associate { it.manifestUrl to it.enabled },
         )
+    }
+
+    /** Starts loading the built-in addons' manifests when nothing has loaded or is loading them yet. */
+    private fun ensureBuiltInAddonsLoaded() {
+        _uiState.value.addons
+            .filter { addon -> addon.isBuiltInAddon() && addon.manifest == null }
+            .forEach { addon ->
+                if (activeRefreshJobs[addon.manifestUrl]?.isActive != true) {
+                    refreshAddon(addon.manifestUrl)
+                }
+            }
     }
 
     private fun loadLocalEnabledStates(): Map<String, Boolean> =
@@ -503,6 +532,30 @@ private fun ManagedAddon?.toPendingAddon(
             enabled = enabled ?: this.enabled,
         )
     }
+
+/** Built-in addon manifest URLs: always installed, never persisted locally or synced to the account. */
+private val BUILT_IN_ADDON_URLS = listOf(SportsAddon.MANIFEST_URL)
+
+private fun isBuiltInAddonUrl(url: String): Boolean =
+    BUILT_IN_ADDON_URLS.any { it.equals(url, ignoreCase = true) }
+
+/** Adds the always-installed built-in addons (kept enabled, at the end of the list). */
+private fun List<ManagedAddon>.withBuiltInAddons(previous: List<ManagedAddon>): List<ManagedAddon> {
+    val userAddons = filterNot { isBuiltInAddonUrl(it.manifestUrl) }
+    val builtIns = BUILT_IN_ADDON_URLS.map { url ->
+        val existing = firstOrNull { it.manifestUrl.equals(url, ignoreCase = true) }
+            ?: previous.firstOrNull { it.manifestUrl.equals(url, ignoreCase = true) }
+        existing?.copy(manifestUrl = url, enabled = true, userSetName = null)
+            ?: ManagedAddon(manifestUrl = url, enabled = true, isRefreshing = false)
+    }
+    return userAddons + builtIns
+}
+
+/** Built-in addons stay last so the addon settings screen, which hides them, can keep using list indices. */
+private fun List<ManagedAddon>.keepBuiltInAddonsLast(): List<ManagedAddon> {
+    val (builtIns, userAddons) = partition { isBuiltInAddonUrl(it.manifestUrl) }
+    return userAddons + builtIns
+}
 
 private fun dedupeManifestUrls(urls: List<String>): List<String> =
     urls.map(::ensureManifestSuffix).distinct()

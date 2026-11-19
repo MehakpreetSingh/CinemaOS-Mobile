@@ -3,6 +3,7 @@ package com.nuvio.app.features.streams
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.plugins.PluginRepositoryItem
+import com.nuvio.app.features.sports.isSportsVideoId
 import com.nuvio.app.features.plugins.PluginRuntimeResult
 import com.nuvio.app.features.plugins.PluginScraper
 import kotlinx.coroutines.CancellationException
@@ -41,7 +42,7 @@ internal fun isAnimeVideoId(videoId: String): Boolean =
     Regex("^(kitsu|anilist|mal|myanimelist|anidb)[:/]", RegexOption.IGNORE_CASE).containsMatchIn(videoId.trim())
 
 internal fun supportsNativeSources(type: String, videoId: String): Boolean =
-    !isAnimeVideoId(videoId) && when (type.lowercase()) {
+    !isAnimeVideoId(videoId) && !isSportsVideoId(videoId) && when (type.lowercase()) {
         "movie", "series", "tv", "show" -> true
         else -> false
     }

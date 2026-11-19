@@ -2,6 +2,7 @@ package com.nuvio.app.features.home
 
 import androidx.compose.ui.text.intl.Locale
 import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.features.addons.withoutBuiltInCatalogAddons
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionRepository
 import com.nuvio.app.features.servers.ServerCatalog
@@ -144,7 +145,7 @@ object HomeCatalogSettingsRepository {
         val collections = CollectionRepository.collections.value
         val syncInput = CatalogSyncInput(addons, collections, Locale.current.toLanguageTag(), ServerRepository.uiState.value.revision)
         if (lastCatalogSync == syncInput) return
-        definitions = buildHomeCatalogDefinitions(addons)
+        definitions = buildHomeCatalogDefinitions(addons.withoutBuiltInCatalogAddons())
         collectionDefinitions = buildCollectionDefinitions(collections)
         lastCatalogSync = syncInput
         lastCollectionSync = lastCollectionSync?.takeIf {

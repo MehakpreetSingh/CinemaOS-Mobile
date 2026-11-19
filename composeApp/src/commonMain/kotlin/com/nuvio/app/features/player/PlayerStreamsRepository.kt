@@ -1,5 +1,6 @@
 package com.nuvio.app.features.player
 
+import com.nuvio.app.features.sports.isSportsVideoId
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.features.addons.AddonRepository
@@ -235,7 +236,7 @@ object PlayerStreamsRepository {
         PlayerSettingsRepository.ensureLoaded()
         val playerSettings = PlayerSettingsRepository.uiState.value
         val debridSettings = DebridSettingsRepository.snapshot()
-        val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled && !isNativeServerRequest) {
+        val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled && !isNativeServerRequest && !isSportsVideoId(videoId)) {
             PluginRepository.getEnabledScrapersForType(type)
         } else {
             emptyList()

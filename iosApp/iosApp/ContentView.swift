@@ -322,6 +322,7 @@ final class TabNavigationCoordinator: ObservableObject {
 @available(iOS 16.0, *)
 enum NuvioAppTab: String, CaseIterable, Hashable {
     case home = "Home"
+    case sports = "Sports"
     case search = "Search"
     case library = "Library"
     case settings = "Settings"
@@ -333,6 +334,7 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     static func from(kotlinName: String?) -> NuvioAppTab? {
         switch kotlinName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "home": return .home
+        case "sports": return .sports
         case "search": return .search
         case "library": return .library
         case "settings", "profile": return .settings
@@ -343,6 +345,7 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     var iconAssetName: String {
         switch self {
         case .home: return "NuvioTabHome"
+        case .sports: return "NuvioTabSports"
         case .search: return "NuvioTabSearch"
         case .library: return "NuvioTabLibrary"
         case .settings: return "NuvioTabProfile"
@@ -352,6 +355,7 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     var fallbackSystemImage: String {
         switch self {
         case .home: return "house.fill"
+        case .sports: return "trophy.fill"
         case .search: return "magnifyingglass"
         case .library: return "rectangle.stack.fill"
         case .settings: return "person.crop.circle.fill"
@@ -639,6 +643,7 @@ final class AppNavigationCoordinator: ObservableObject {
     @Published var isProfileSwitcherPresented = false
 
     let homeCoordinator = TabNavigationCoordinator()
+    let sportsCoordinator = TabNavigationCoordinator()
     let searchCoordinator = TabNavigationCoordinator()
     let libraryCoordinator = TabNavigationCoordinator()
     let settingsCoordinator = TabNavigationCoordinator()
@@ -654,12 +659,13 @@ final class AppNavigationCoordinator: ObservableObject {
     }
 
     private var allCoordinators: [TabNavigationCoordinator] {
-        [homeCoordinator, searchCoordinator, libraryCoordinator, settingsCoordinator]
+        [homeCoordinator, sportsCoordinator, searchCoordinator, libraryCoordinator, settingsCoordinator]
     }
 
     func coordinator(for tab: NuvioAppTab) -> TabNavigationCoordinator {
         switch tab {
         case .home: return homeCoordinator
+        case .sports: return sportsCoordinator
         case .search: return searchCoordinator
         case .library: return libraryCoordinator
         case .settings: return settingsCoordinator

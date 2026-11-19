@@ -3,6 +3,7 @@ package com.nuvio.app.features.collection
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.features.addons.withoutBuiltInCatalogAddons
 import com.nuvio.app.features.addons.enabledAddons
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -180,7 +181,7 @@ object CollectionRepository {
     fun generateId(): String = Uuid.random().toString()
 
     fun getAvailableCatalogs(): List<AvailableCatalog> {
-        val addons = AddonRepository.uiState.value.addons.enabledAddons()
+        val addons = AddonRepository.uiState.value.addons.enabledAddons().withoutBuiltInCatalogAddons()
         return addons.mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
             addon to manifest

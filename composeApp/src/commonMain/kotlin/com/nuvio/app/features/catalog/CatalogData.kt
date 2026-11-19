@@ -6,6 +6,8 @@ import com.nuvio.app.features.addons.fetchAddonResponseText
 import com.nuvio.app.features.home.HomeCatalogParser
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.stableKey
+import com.nuvio.app.features.sports.SportsAddon
+import com.nuvio.app.features.sports.withoutSportsBranding
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,8 +100,14 @@ suspend fun fetchCatalogPage(
     } else {
         null
     }
+    // Live Sports items never carry the addon's own name or logo (Sports tab and its View All pages).
+    val items = if (manifestUrl.equals(SportsAddon.MANIFEST_URL, ignoreCase = true)) {
+        parsed.items.map { it.withoutSportsBranding() }
+    } else {
+        parsed.items
+    }
     return CatalogPage(
-        items = parsed.items,
+        items = items,
         rawItemCount = parsed.rawItemCount,
         nextSkip = nextSkip,
     )

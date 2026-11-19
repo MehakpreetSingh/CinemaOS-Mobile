@@ -5,6 +5,7 @@ import com.nuvio.app.core.i18n.localizedMediaTypeLabel
 import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.addons.AddonExtraProperty
 import com.nuvio.app.features.addons.ManagedAddon
+import com.nuvio.app.features.addons.withoutBuiltInCatalogAddons
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.addons.firstEnabledManifestError
 import com.nuvio.app.features.addons.hasPendingEnabledManifests
@@ -433,7 +434,7 @@ object SearchRepository {
         addons: List<ManagedAddon>,
         query: String,
     ): List<SearchCatalogRequest> =
-        addons.mapNotNull { addon ->
+        addons.withoutBuiltInCatalogAddons().mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
             addon to manifest
         }.flatMap { (addon, manifest) ->
@@ -452,7 +453,7 @@ object SearchRepository {
         }
 
     private fun buildDiscoverSources(addons: List<ManagedAddon>): List<DiscoverCatalogOption> =
-        addons.mapNotNull { addon ->
+        addons.withoutBuiltInCatalogAddons().mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
             addon to manifest
         }.flatMap { (addon, manifest) ->

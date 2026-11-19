@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.features.addons.isBuiltInAddon
 import com.nuvio.app.features.addons.AddonStorage
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.collection.Collection
@@ -140,7 +141,7 @@ class HomeCatalogSettingsRepositoryTest {
                 AddonRepository.initialize()
                 withTimeout(5_000) { AddonRepository.awaitManifestsLoaded() }
                 val addons = AddonRepository.uiState.value.addons
-                assertNotNull(addons.single().manifest)
+                assertNotNull(addons.single { !it.isBuiltInAddon() }.manifest)
                 HomeCatalogSettingsRepository.setHeroEnabled(true)
                 val initialCollection = collection().copy(
                     folders = listOf(CollectionFolder(

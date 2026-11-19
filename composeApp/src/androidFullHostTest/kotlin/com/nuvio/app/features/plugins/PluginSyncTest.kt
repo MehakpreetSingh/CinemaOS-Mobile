@@ -6,6 +6,7 @@ import com.nuvio.app.core.network.ServerConfigurationRepository
 import com.nuvio.app.core.network.ServerConfigurationStorage
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.features.addons.isBuiltInAddon
 import com.nuvio.app.features.addons.AddonStorage
 import com.russhwolf.settings.SettingsInitializer
 import kotlinx.coroutines.flow.first
@@ -154,12 +155,12 @@ class PluginSyncTest {
         AddonStorage.saveInstalledAddonUrls(1, listOf(manifestUrl))
         AddonStorage.saveAddonEnabledStates(1, mapOf(manifestUrl to false))
         AddonRepository.initialize()
-        assertEquals(1, AddonRepository.uiState.value.addons.size)
+        assertEquals(1, AddonRepository.uiState.value.addons.filterNot { it.isBuiltInAddon() }.size)
         respond("[]")
 
         AddonRepository.pullFromServer(1)
 
-        assertTrue(AddonRepository.uiState.value.addons.isEmpty())
+        assertTrue(AddonRepository.uiState.value.addons.none { !it.isBuiltInAddon() })
         assertTrue(AddonStorage.loadInstalledAddonUrls(1).isEmpty())
         assertTrue(AddonStorage.loadAddonEnabledStates(1).isEmpty())
         AddonRepository.clearLocalState()
@@ -167,7 +168,7 @@ class PluginSyncTest {
         respond("[]")
         AddonRepository.pullFromServer(1)
 
-        assertTrue(AddonRepository.uiState.value.addons.isEmpty())
+        assertTrue(AddonRepository.uiState.value.addons.none { !it.isBuiltInAddon() })
         assertPullsOnly("addons", count = 2)
     }
 

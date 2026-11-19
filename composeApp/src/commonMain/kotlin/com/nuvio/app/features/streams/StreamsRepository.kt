@@ -1,5 +1,6 @@
 package com.nuvio.app.features.streams
 
+import com.nuvio.app.features.sports.isSportsVideoId
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.features.addons.AddonRepository
@@ -163,7 +164,7 @@ object StreamsRepository {
         val serverSources = ServerStreams.sources(type, videoId, season, episode, forceRefresh)
         val preferredGroupIds = serverSources.filter { it.preferred }.mapTo(mutableSetOf()) { it.addonId }
         val installedAddons = if (isNativeServerRequest) emptyList() else AddonRepository.uiState.value.addons.enabledAddons()
-        val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled && !isNativeServerRequest) {
+        val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled && !isNativeServerRequest && !isSportsVideoId(videoId)) {
             PluginRepository.getEnabledScrapersForType(type)
         } else {
             emptyList()

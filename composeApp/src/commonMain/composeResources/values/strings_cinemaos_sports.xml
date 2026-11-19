@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="compose_nav_sports">Sports</string>
+    <string name="sports_live_badge">LIVE</string>
+    <string name="sports_row_live">🔴 Live Now</string>
+    <string name="sports_row_upcoming">⏱️ Upcoming</string>
+    <string name="sports_row_networks">📺 24/7 TV</string>
+    <string name="sports_row_replays">⏪ Replays</string>
+    <string name="sports_filter_all">All</string>
+    <string name="sports_filter_football">⚽ Soccer</string>
+    <string name="sports_filter_cricket">🏏 Cricket</string>
+    <string name="sports_filter_basketball">🏀 Basketball</string>
+    <string name="sports_filter_motorsport">🏎️ F1 &amp; Motor</string>
+    <string name="sports_filter_tennis">🎾 Tennis</string>
+    <string name="sports_filter_american_football">🏈 American Football</string>
+    <string name="sports_filter_hockey">🏒 Hockey</string>
+    <string name="sports_filter_baseball">⚾ Baseball</string>
+    <string name="sports_filter_mma">🥊 MMA</string>
+    <string name="sports_filter_rugby">🏉 Rugby</string>
+    <string name="sports_filter_golf">⛳ Golf</string>
+    <string name="sports_filter_darts">🎯 Darts</string>
+    <string name="sports_filter_college">🎓 College</string>
+    <string name="sports_filter_other">🏅 Other</string>
+    <string name="sports_empty_message">No sports events right now. Pull down to refresh.</string>
+    <string name="sports_error_message">Couldn't load sports right now. Check your connection and try again.</string>
+    <string name="sports_retry">Retry</string>
+</resources>
