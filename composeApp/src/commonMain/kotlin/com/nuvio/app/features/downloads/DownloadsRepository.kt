@@ -132,7 +132,7 @@ object DownloadsRepository {
             ?.takeIf { it.isNotBlank() }
             ?: return DownloadEnqueueResult.MissingUrl
 
-        if (!sourceUrl.isSupportedDownloadUrl(stream.behaviorHints.streamType)) {
+        if (!sourceUrl.isSupportedDownloadUrl(stream.streamType)) {
             return DownloadEnqueueResult.UnsupportedFormat
         }
 
@@ -184,7 +184,7 @@ object DownloadsRepository {
             providerName = stream.addonName,
             providerAddonId = stream.addonId,
             sourceUrl = sourceUrl,
-            sourceStreamType = stream.behaviorHints.streamType,
+            sourceStreamType = stream.streamType,
             sourceHeaders = sanitizeRequestHeaders(stream.behaviorHints.proxyHeaders?.request),
             sourceResponseHeaders = sanitizeResponseHeaders(stream.behaviorHints.proxyHeaders?.response),
             subtitleRequests = addonSubtitleRequests(
