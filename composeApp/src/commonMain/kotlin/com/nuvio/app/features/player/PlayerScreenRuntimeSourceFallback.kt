@@ -1,5 +1,6 @@
 package com.nuvio.app.features.player
 
+import com.nuvio.app.isIos
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
@@ -71,6 +72,8 @@ internal fun PlayerScreenRuntime.tryFallbackToNextSourceAfterError(message: Stri
     if (sourceFallbackJob?.isActive == true) return true
     val settings = playerSettingsUiState
     if (!settings.streamAutoPlayFallbackActive) return false
+    // Engine failover owns error recovery on Android, so the two never run together.
+    if (!isIos && settings.autoSwitchPlaybackEngineOnError) return false
     if (initialLoadCompleted) return false
     val failedUrl = activeSourceUrl
     if (failedUrl.isBlank() || failedUrl != autoSelectedSourceUrl) return false
