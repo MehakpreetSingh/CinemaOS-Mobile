@@ -69,6 +69,7 @@ internal fun PlayerScreenModalHosts(
     currentStream: PlayerCurrentStream,
     onSourceFilterSelected: (String?) -> Unit,
     onSourceStreamSelected: (StreamItem) -> Unit,
+    onDownloadSourceStream: (StreamItem) -> Unit,
     onReloadSources: () -> Unit,
     onSourcesPanelDismissed: () -> Unit,
     isSeries: Boolean,
@@ -204,6 +205,7 @@ internal fun PlayerScreenModalHosts(
         onFilterSelected = onSourceFilterSelected,
         onStreamSelected = onSourceStreamSelected,
         onReload = onReloadSources,
+        onDownloadStream = onDownloadSourceStream,
         onDismiss = onSourcesPanelDismissed,
     )
 

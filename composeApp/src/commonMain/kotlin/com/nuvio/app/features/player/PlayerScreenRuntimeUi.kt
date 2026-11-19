@@ -789,6 +789,39 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         ),
         onSourceFilterSelected = PlayerStreamsRepository::selectSourceFilter,
         onSourceStreamSelected = { stream -> switchToSource(stream) },
+        onDownloadSourceStream = { stream ->
+            if (activeTorrentInfoHash != null || !activeSourceAudioUrl.isNullOrBlank()) {
+                com.nuvio.app.core.ui.NuvioToastController.show(
+                    com.nuvio.app.features.downloads.DownloadEnqueueResult.UnsupportedFormat.toastMessage(),
+                )
+            } else {
+                val downloadStream = stream.copy(
+                    url = activeSourceUrl,
+                    behaviorHints = stream.behaviorHints.copy(
+                        proxyHeaders = com.nuvio.app.features.streams.StreamProxyHeaders(
+                            request = activeSourceHeaders,
+                            response = activeSourceResponseHeaders,
+                        ),
+                    ),
+                )
+                val result = com.nuvio.app.features.downloads.DownloadsRepository.enqueueFromStream(
+                    contentType = contentType ?: parentMetaType,
+                    videoId = activeVideoId ?: parentMetaId,
+                    parentMetaId = parentMetaId,
+                    parentMetaType = parentMetaType,
+                    title = title,
+                    logo = logo,
+                    poster = poster,
+                    background = background,
+                    seasonNumber = activeSeasonNumber,
+                    episodeNumber = activeEpisodeNumber,
+                    episodeTitle = activeEpisodeTitle,
+                    episodeThumbnail = activeEpisodeThumbnail,
+                    stream = downloadStream,
+                )
+                com.nuvio.app.core.ui.NuvioToastController.show(result.toastMessage())
+            }
+        },
         onReloadSources = {
             val vid = activeVideoId
             if (vid != null) {
