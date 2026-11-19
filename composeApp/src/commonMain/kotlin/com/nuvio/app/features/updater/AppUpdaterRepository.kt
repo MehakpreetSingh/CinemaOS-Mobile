@@ -40,7 +40,7 @@ internal object AppUpdaterRepository {
     suspend fun getLatestChannelUpdate(channel: UpdateChannel): Result<AppUpdate> = runCatching {
         val response = httpRequestRaw(
             method = "GET",
-            url = "https://api.github.com/repos/MehakpreetSingh/CinemaOS-Mobile/${releasePath(channel)}",
+            url = "https://api.github.com/repos/cinema-os/CinemaOS-Mobile/${releasePath(channel)}",
             headers = mapOf(
                 "Accept" to "application/vnd.github+json",
                 "User-Agent" to "CinemaOS-Mobile",

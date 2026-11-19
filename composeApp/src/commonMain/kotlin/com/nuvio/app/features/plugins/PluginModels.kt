@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 /** CinemaOS anime scrapers (MegaPlay, Anikoto, AnimeSalt, AnimeWorld, KickAssAnime), installed on first launch. */
 internal const val CINEMAOS_DEFAULT_PLUGIN_MANIFEST_URL =
-    "https://raw.githubusercontent.com/MehakpreetSingh/CinemaOS-TV-App/cinemaos/plugins/cinemaos/manifest.json"
+    "https://raw.githubusercontent.com/cinema-os/CinemaOS-TV-App/cinemaos/plugins/cinemaos/manifest.json"
 
 internal const val PLUGIN_REPOSITORY_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1_000L
 
