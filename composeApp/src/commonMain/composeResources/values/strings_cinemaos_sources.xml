@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="cinemaos_player_quality_hint">Same release at other resolutions</string>
+    <string name="cinemaos_player_quality_hint">Best source at each quality</string>
+    <string name="cinemaos_player_quality_source_one">1 source</string>
+    <string name="cinemaos_player_quality_sources">%1$d sources</string>
     <string name="cinemaos_player_source_download">Download this source</string>
 </resources>

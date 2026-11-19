@@ -81,6 +81,7 @@ internal fun CinemaosPlayerControls(
     resizeMode: PlayerResizeMode,
     isLocked: Boolean,
     chapters: List<PlayerChapter>,
+    isLive: Boolean = false,
     showPlaybackControls: Boolean,
     awaitingFirstFrame: Boolean = false,
     loadingMessage: String? = null,
@@ -294,14 +295,17 @@ internal fun CinemaosPlayerControls(
                         horizontalArrangement = Arrangement.spacedBy(metrics.centerGap),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        CinemaosCenterButton(
-                            description = stringResource(Res.string.compose_player_seek_back_10),
-                            onClick = { onInteraction(); onSeekBack() },
-                            buttonSize = seekIconSize + 20.dp,
-                            icon = Icons.Rounded.Replay10,
-                            iconSize = seekIconSize,
-                            tint = foreground,
-                        )
+                        // Live streams cannot seek: only play and pause stay in the center.
+                        if (!isLive) {
+                            CinemaosCenterButton(
+                                description = stringResource(Res.string.compose_player_seek_back_10),
+                                onClick = { onInteraction(); onSeekBack() },
+                                buttonSize = seekIconSize + 20.dp,
+                                icon = Icons.Rounded.Replay10,
+                                iconSize = seekIconSize,
+                                tint = foreground,
+                            )
+                        }
                         if (awaitingFirstFrame || playbackSnapshot.isLoading) {
                             Column(
                                 modifier = Modifier.size(playIconSizeLarge + 20.dp),
@@ -324,14 +328,16 @@ internal fun CinemaosPlayerControls(
                                 tint = foreground,
                             )
                         }
-                        CinemaosCenterButton(
-                            description = stringResource(Res.string.compose_player_seek_forward_10),
-                            onClick = { onInteraction(); onSeekForward() },
-                            buttonSize = seekIconSize + 20.dp,
-                            icon = Icons.Rounded.Forward10,
-                            iconSize = seekIconSize,
-                            tint = foreground,
-                        )
+                        if (!isLive) {
+                            CinemaosCenterButton(
+                                description = stringResource(Res.string.compose_player_seek_forward_10),
+                                onClick = { onInteraction(); onSeekForward() },
+                                buttonSize = seekIconSize + 20.dp,
+                                icon = Icons.Rounded.Forward10,
+                                iconSize = seekIconSize,
+                                tint = foreground,
+                            )
+                        }
                     }
                 }
 
@@ -344,17 +350,27 @@ internal fun CinemaosPlayerControls(
                         .windowInsetsPadding(playerTimelineBottomInsets(metrics))
                         .padding(horizontal = sideInset),
                 ) {
-                    PlayerChapterTitle(chapters = chapters, positionMs = displayedPositionMs)
-                    PlayerTimeline(
-                        snapshot = playbackSnapshot,
-                        displayedPositionMs = displayedPositionMs,
-                        onScrubChange = onScrubChange,
-                        onScrubFinished = {
-                            onInteraction()
-                            onScrubFinished(it)
-                        },
-                        chapters = chapters,
-                    )
+                    if (isLive) {
+                        // Live: a red LIVE pill replaces the time and the seek bar.
+                        PlayerLivePill(
+                            modifier = Modifier.padding(
+                                start = PlayerTimelineContentInset,
+                                bottom = 8.dp,
+                            ),
+                        )
+                    } else {
+                        PlayerChapterTitle(chapters = chapters, positionMs = displayedPositionMs)
+                        PlayerTimeline(
+                            snapshot = playbackSnapshot,
+                            displayedPositionMs = displayedPositionMs,
+                            onScrubChange = onScrubChange,
+                            onScrubFinished = {
+                                onInteraction()
+                                onScrubFinished(it)
+                            },
+                            chapters = chapters,
+                        )
+                    }
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                         Row(
                             modifier = Modifier
@@ -391,7 +407,7 @@ internal fun CinemaosPlayerControls(
                                         tint = foreground,
                                     )
                                 }
-                                if (onNextEpisodeClick != null) {
+                                if (onNextEpisodeClick != null && !isLive) {
                                     PlayerAction(
                                         description = stringResource(Res.string.player_next_episode),
                                         onClick = { onInteraction(); onNextEpisodeClick() },
@@ -400,7 +416,7 @@ internal fun CinemaosPlayerControls(
                                         tint = foreground,
                                     )
                                 }
-                                if (!compact) {
+                                if (!compact && !isLive) {
                                     Text(
                                         text = formatPlaybackRuntime(displayedPositionMs, playbackSnapshot.durationMs, false),
                                         style = bottomTextStyle,
@@ -410,7 +426,7 @@ internal fun CinemaosPlayerControls(
                                     )
                                 }
                             }
-                            if (onEpisodesClick != null) {
+                            if (onEpisodesClick != null && !isLive) {
                                 CinemaosEpisodesPill(
                                     label = stringResource(Res.string.compose_player_episodes),
                                     onClick = { onInteraction(); onEpisodesClick() },

@@ -43,13 +43,16 @@ import nuvio.composeapp.generated.resources.action_close
 import nuvio.composeapp.generated.resources.cinemaos_player_quality
 import nuvio.composeapp.generated.resources.cinemaos_player_quality_hint
 import nuvio.composeapp.generated.resources.cinemaos_player_quality_none
+import nuvio.composeapp.generated.resources.cinemaos_player_quality_source_one
+import nuvio.composeapp.generated.resources.cinemaos_player_quality_sources
 import nuvio.composeapp.generated.resources.compose_player_playing
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Lists the other qualities of the playing release, best first, and switches to one straight
- * away. Each row shows a resolution tile, the resolution class and size, the format badges, and
- * a radio mark; the playing quality is tinted and checked.
+ * Lists every quality available across all loaded sources, best first, one row per quality, and
+ * switches to the best source of the tapped quality (see [qualityGroupsOf] for the rule). Each
+ * row shows a resolution tile, the resolution class, how many sources have it and the best
+ * one's size, the format badges, and a radio mark; the playing quality is tinted and checked.
  */
 @Composable
 internal fun PlayerQualityPanel(
@@ -61,12 +64,9 @@ internal fun PlayerQualityPanel(
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
-    val streams = streamsUiState.allStreams
-    val variants = remember(streams, currentStream) { qualityVariantsOf(streams, currentStream) }
-    val currentIndex = remember(streams, currentStream) { streams.currentPlayerStreamIndex(currentStream) }
-    val currentHeight = remember(currentStream) {
-        parseStreamInfo(listOf(currentStream.name, currentStream.description, currentStream.filename)).qualityHeight
-    }
+    // All loaded sources, regardless of the filter chip chosen in the Sources panel.
+    val streams = remember(streamsUiState.groups) { streamsUiState.groups.flatMap { it.streams } }
+    val groups = remember(streams, currentStream) { qualityGroupsOf(streams, currentStream) }
     val playingLabel = stringResource(Res.string.compose_player_playing)
     PlayerSidePanel(
         visible = visible,
@@ -81,7 +81,7 @@ internal fun PlayerQualityPanel(
             Spacer(Modifier.height(6.dp))
             Text(
                 text = stringResource(
-                    if (variants.size <= 1) Res.string.cinemaos_player_quality_none else Res.string.cinemaos_player_quality_hint,
+                    if (groups.size <= 1) Res.string.cinemaos_player_quality_none else Res.string.cinemaos_player_quality_hint,
                 ),
                 color = tokens.colors.textSecondary,
                 style = MaterialTheme.typography.bodyMedium,
@@ -91,15 +91,11 @@ internal fun PlayerQualityPanel(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                variants.forEach { (stream, info) ->
-                    val isCurrent = (currentIndex >= 0 && stream === streams[currentIndex]) ||
-                        (currentIndex < 0 && info.qualityHeight == currentHeight)
+                groups.forEach { group ->
                     QualityOptionRow(
-                        stream = stream,
-                        info = info,
-                        isCurrent = isCurrent,
+                        group = group,
                         playingLabel = playingLabel,
-                        onClick = { onStreamSelected(stream) },
+                        onClick = { onStreamSelected(group.best) },
                     )
                 }
             }
@@ -109,15 +105,15 @@ internal fun PlayerQualityPanel(
 
 @Composable
 private fun QualityOptionRow(
-    stream: StreamItem,
-    info: ParsedStreamInfo,
-    isCurrent: Boolean,
+    group: QualityGroup,
     playingLabel: String,
     onClick: () -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
     val accent = MaterialTheme.colorScheme.primary
     val shape = RoundedCornerShape(14.dp)
+    val info = group.bestInfo
+    val isCurrent = group.isCurrent
     val formatInfo = remember(info) { info.copy(qualityLabel = null, sizeLabel = null) }
     val hasFormatBadges = remember(info) {
         with(info) {
@@ -140,14 +136,14 @@ private fun QualityOptionRow(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ResolutionTile(label = info.qualityLabel, highlighted = isCurrent)
+        ResolutionTile(label = qualityBucketLabel(group.bucket), highlighted = isCurrent)
         Spacer(Modifier.width(12.dp))
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Text(
-                text = resolutionClass(info.qualityHeight) ?: stream.streamLabel,
+                text = resolutionClass(group.bucket),
                 color = if (isCurrent) accent else tokens.colors.textPrimary,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
@@ -155,7 +151,11 @@ private fun QualityOptionRow(
                 overflow = TextOverflow.Ellipsis,
             )
             val detail = listOfNotNull(
-                info.qualityHeight.takeIf { it > 0 }?.let { "${it}p" },
+                if (group.sourceCount == 1) {
+                    stringResource(Res.string.cinemaos_player_quality_source_one)
+                } else {
+                    stringResource(Res.string.cinemaos_player_quality_sources, group.sourceCount)
+                },
                 info.sizeLabel,
                 playingLabel.takeIf { isCurrent },
             ).joinToString("  ·  ")
@@ -231,11 +231,11 @@ private fun SelectionMark(selected: Boolean) {
 }
 
 /** Common name for a resolution height; technical labels, the same in every language. */
-private fun resolutionClass(height: Int): String? = when {
+private fun resolutionClass(height: Int): String = when {
     height >= 2160 -> "Ultra HD"
     height >= 1440 -> "Quad HD"
     height >= 1080 -> "Full HD"
     height >= 720 -> "HD"
-    height > 0 -> "SD"
-    else -> null
+    height >= 480 -> "SD"
+    else -> "SD / Unknown"
 }

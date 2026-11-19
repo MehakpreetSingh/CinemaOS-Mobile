@@ -419,6 +419,11 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
             initialSeekApplied = true
             return@LaunchedEffect
         }
+        // Live streams start at the live edge; there is no position to resume.
+        if (isLivePlayback) {
+            initialSeekApplied = true
+            return@LaunchedEffect
+        }
 
         val progressFraction = activeInitialProgressFraction
             ?.takeIf { it > 0f }
@@ -711,7 +716,7 @@ private fun PlayerScreenRuntime.BindPlayerMetadataAndSkipEffects() {
         lastManualSkipSeekPositions,
     ) {
         recomputeChapterSkipIntervalsIfNeeded()
-        if (skipIntervals.isEmpty()) {
+        if (skipIntervals.isEmpty() || isLivePlayback) {
             activeSkipInterval = null
             return@LaunchedEffect
         }

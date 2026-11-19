@@ -15,5 +15,5 @@
     <string name="cinemaos_player_on">On</string>
     <string name="cinemaos_player_off">Off</string>
     <string name="cinemaos_player_quality">Quality</string>
-    <string name="cinemaos_player_quality_none">No other qualities found for this source</string>
+    <string name="cinemaos_player_quality_none">Only one quality available</string>
 </resources>

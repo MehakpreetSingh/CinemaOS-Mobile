@@ -308,6 +308,8 @@ data class PlayerPlaybackSnapshot(
     val playbackSpeed: Float = 1f,
     val videoWidth: Int = 0,
     val videoHeight: Int = 0,
+    /** The engine reports a live stream (Media3 `isCurrentMediaItemLive` or an unset duration once ready). */
+    val isLive: Boolean = false,
 )
 
 data class PlayerNowPlayingInfo(

@@ -384,6 +384,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
     val awaitingFirstFrame = (activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null) &&
         !initialLoadCompleted && errorMessage == null
     val bufferingNow = activeSourceUrl.isNotBlank() && playbackSnapshot.isLoading && errorMessage == null
+    val isLive = isLivePlayback
     LaunchedEffect(folded) {
         if (folded) {
             controlsVisible = true
@@ -414,7 +415,8 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
             releaseInfo = metaUiState.meta?.takeIf { it.id == parentMetaId }?.releaseInfo,
             badges = playerBadges,
             hideDetails = activeSkipInterval != null && !skipIntervalDismissed,
-            onNextEpisodeClick = if (nextEpisodeInfo?.hasAired == true && !nextEpisodeAutoPlaySearching && nextEpisodeAutoPlayCountdown == null) {
+            isLive = isLive,
+            onNextEpisodeClick = if (!isLive && nextEpisodeInfo?.hasAired == true && !nextEpisodeAutoPlaySearching && nextEpisodeAutoPlayCountdown == null) {
                 {
                     if (!partyBlocksControl()) playNextEpisode()
                 }
@@ -466,9 +468,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
             onQualityClick = if (activeVideoId != null) { { openQualityPanel() } } else null,
             qualityLabel = parseStreamInfo(listOf(activeStreamTitle, activeStreamSubtitle, activeSourceFilename)).qualityLabel,
-            onEpisodesClick = if (isSeries) { { openEpisodesPanel() } } else null,
-            chapters = chapters,
-            onChaptersClick = if (chapters.isNotEmpty()) { { openChaptersPanel() } } else null,
+            onEpisodesClick = if (isSeries && !isLive) { { openEpisodesPanel() } } else null,
+            chapters = if (isLive) emptyList() else chapters,
+            onChaptersClick = if (chapters.isNotEmpty() && !isLive) { { openChaptersPanel() } } else null,
             onOpenInExternalPlayer = args.onOpenInExternalPlayer
                 ?.takeUnless { ServerStreams.isServerSourceId(activeProviderAddonId) }
                 ?.let { openExternal ->
@@ -504,7 +506,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
                 }
             },
             onSubmitIntroClick = if (
-                isSeries &&
+                isSeries && !isLive &&
                 playerSettingsUiState.introSubmitEnabled &&
                 playerSettingsUiState.introDbApiKey.isNotBlank()
             ) {
@@ -522,11 +524,17 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
             showParentalGuide = showParentalGuide,
             onParentalGuideAnimationComplete = { showParentalGuide = false },
             onScrubChange = { positionMs ->
-                isScrubbingTimeline = true
-                scrubbingPositionMs = positionMs
+                if (!isLive) {
+                    isScrubbingTimeline = true
+                    scrubbingPositionMs = positionMs
+                }
             },
             onScrubFinished = { positionMs ->
-                val targetMs = if (isPartyControlLocked) ownSeekTarget(positionMs) else positionMs
+                val targetMs = when {
+                    isLive -> null
+                    isPartyControlLocked -> ownSeekTarget(positionMs)
+                    else -> positionMs
+                }
                 if (targetMs == null) {
                     isScrubbingTimeline = false
                     scrubbingPositionMs = null
@@ -757,7 +765,9 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         showVideoSettingsModal = showVideoSettingsModal,
         playerSettings = playerSettingsUiState,
         settingsQuickActions = buildList {
-            add(PlayerSettingsQuickAction(stringResource(Res.string.compose_player_speed), formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed), { cyclePlaybackSpeed() }))
+            if (!isLivePlayback) {
+                add(PlayerSettingsQuickAction(stringResource(Res.string.compose_player_speed), formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed), { cyclePlaybackSpeed() }))
+            }
             add(PlayerSettingsQuickAction(stringResource(Res.string.cinemaos_player_aspect_ratio), stringResource(resizeMode.labelRes), { cycleResizeMode() }))
             if (activeVideoId != null) add(PlayerSettingsQuickAction(stringResource(Res.string.cinemaos_player_quality), onClick = {
                 showVideoSettingsModal = false; openQualityPanel()
@@ -765,10 +775,10 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
             if (playerController?.playbackEngine != null) add(PlayerSettingsQuickAction(stringResource(Res.string.cd_switch_player_engine), onClick = {
                 showVideoSettingsModal = false; showSwitchEngineConfirm = true
             }))
-            if (chapters.isNotEmpty()) add(PlayerSettingsQuickAction(stringResource(Res.string.compose_player_chapters), onClick = {
+            if (chapters.isNotEmpty() && !isLivePlayback) add(PlayerSettingsQuickAction(stringResource(Res.string.compose_player_chapters), onClick = {
                 showVideoSettingsModal = false; openChaptersPanel()
             }))
-            if (isSeries && playerSettingsUiState.introSubmitEnabled && playerSettingsUiState.introDbApiKey.isNotBlank()) {
+            if (isSeries && !isLivePlayback && playerSettingsUiState.introSubmitEnabled && playerSettingsUiState.introDbApiKey.isNotBlank()) {
                 add(PlayerSettingsQuickAction(stringResource(Res.string.submit_intro_action), onClick = {
                     showVideoSettingsModal = false; showSubmitIntroModal = true
                 }))

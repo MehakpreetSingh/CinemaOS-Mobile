@@ -38,6 +38,17 @@ internal suspend fun recordExternalPlaybackProgress(
     fallbackSession: WatchProgressPlaybackSession?,
 ) {
     val session = result.playbackSession ?: fallbackSession ?: return
+    // Live sports streams have no resumable position.
+    if (
+        isLiveSportsContent(
+            videoId = session.videoId,
+            parentMetaId = session.parentMetaId,
+            parentMetaType = session.parentMetaType,
+            contentType = session.contentType,
+            seasonNumber = session.seasonNumber,
+            episodeNumber = session.episodeNumber,
+        )
+    ) return
     // A completed playback may carry no position at all (MX Player), so only drop position-less
     // results that were not reported as played to the end.
     if (result.positionMs <= 0L && result.endedByUser) return

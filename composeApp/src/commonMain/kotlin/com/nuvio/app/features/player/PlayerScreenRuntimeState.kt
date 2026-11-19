@@ -1,5 +1,6 @@
 package com.nuvio.app.features.player
 
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -155,6 +156,9 @@ internal class PlayerScreenRuntime(
     var resizeMode by mutableStateOf(playerSettingsUiState.resizeMode)
     var layoutSize by mutableStateOf(IntSize.Zero)
     var playbackSnapshot by mutableStateOf(PlayerPlaybackSnapshot())
+    /** Live mode; see [computeIsLivePlayback]. Derived so readers only recompose when it flips. */
+    private val isLivePlaybackState = derivedStateOf { computeIsLivePlayback() }
+    val isLivePlayback: Boolean get() = isLivePlaybackState.value
     var playbackSnapshotKey by mutableStateOf<PlaybackKey?>(null)
     var playerController by mutableStateOf<PlayerEngineController?>(null)
     var playerControllerSourceUrl by mutableStateOf<String?>(null)

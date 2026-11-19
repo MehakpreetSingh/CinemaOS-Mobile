@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.LocalScreenActive
+import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
@@ -50,6 +52,7 @@ import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.core.ui.backdropControlColor
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
+import com.nuvio.app.features.addons.AddonCatalog
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.catalog.CatalogTarget
 import com.nuvio.app.features.catalog.fetchCatalogPage
@@ -78,6 +81,7 @@ import nuvio.composeapp.generated.resources.sports_filter_cricket
 import nuvio.composeapp.generated.resources.sports_filter_darts
 import nuvio.composeapp.generated.resources.sports_filter_football
 import nuvio.composeapp.generated.resources.sports_filter_golf
+import nuvio.composeapp.generated.resources.sports_filter_live_tv
 import nuvio.composeapp.generated.resources.sports_filter_hockey
 import nuvio.composeapp.generated.resources.sports_filter_mma
 import nuvio.composeapp.generated.resources.sports_filter_motorsport
@@ -85,6 +89,8 @@ import nuvio.composeapp.generated.resources.sports_filter_other
 import nuvio.composeapp.generated.resources.sports_filter_rugby
 import nuvio.composeapp.generated.resources.sports_filter_tennis
 import nuvio.composeapp.generated.resources.sports_live_badge
+import nuvio.composeapp.generated.resources.sports_live_tv_empty
+import nuvio.composeapp.generated.resources.sports_live_tv_search_placeholder
 import nuvio.composeapp.generated.resources.sports_retry
 import nuvio.composeapp.generated.resources.sports_row_live
 import nuvio.composeapp.generated.resources.sports_row_networks
@@ -96,6 +102,8 @@ import org.jetbrains.compose.resources.stringResource
 private const val SPORTS_ROW_PREVIEW_ITEMS = 20
 private const val SPORTS_LIVE_REFRESH_MS = 60_000L
 private const val SPORTS_CATALOG_TYPE = "tv"
+private const val LIVE_TV_PAGE_ITEMS = 100
+private const val LIVE_TV_SEARCH_DEBOUNCE_MS = 350L
 
 /**
  * One sport filter chip. [sportKey] is the suffix of the addon's per-sport catalog
@@ -109,6 +117,8 @@ private enum class SportFilter(
     val hasReplays: Boolean,
     val label: StringResource,
 ) {
+    /** Only the 24/7 channels ([SportsAddon.CATALOG_NETWORKS]) as a grid, with search. */
+    LiveTv(null, null, false, Res.string.sports_filter_live_tv),
     All(null, null, false, Res.string.sports_filter_all),
     Football("football", "Football", true, Res.string.sports_filter_football),
     Cricket("cricket", "Cricket", false, Res.string.sports_filter_cricket),
@@ -200,6 +210,77 @@ fun SportsScreen(
     var reloadToken by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 
+    // Live TV chip: the 24/7 channels catalog as a paged grid, searchable when the catalog allows it.
+    val isLiveTv = selectedFilter == SportFilter.LiveTv
+    val networksCatalog = availableCatalogs?.get(SportsAddon.CATALOG_NETWORKS)
+    val liveTvSupportsSearch = networksCatalog?.supportsSearchExtra() ?: true
+    val liveTvSupportsPagination = networksCatalog?.supportsPagination() ?: true
+    var liveTvQuery by rememberSaveable { mutableStateOf("") }
+    var liveTvItems by remember { mutableStateOf<List<MetaPreview>>(emptyList()) }
+    var liveTvNextSkip by remember { mutableStateOf<Int?>(null) }
+    var liveTvLoading by remember { mutableStateOf(false) }
+    var liveTvLoadingMore by remember { mutableStateOf(false) }
+    var liveTvFailed by remember { mutableStateOf(false) }
+    val liveTvSearch = liveTvQuery.trim().takeIf { liveTvSupportsSearch && it.isNotEmpty() }
+
+    suspend fun loadLiveTvFirstPage(forceRefresh: Boolean) {
+        try {
+            val page = fetchCatalogPage(
+                manifestUrl = manifestUrl,
+                type = SPORTS_CATALOG_TYPE,
+                catalogId = SportsAddon.CATALOG_NETWORKS,
+                search = liveTvSearch,
+                maxItems = LIVE_TV_PAGE_ITEMS,
+                forceRefresh = forceRefresh,
+            )
+            liveTvItems = page.items.distinctBy { it.stableKey() }
+            liveTvNextSkip = page.nextSkip?.takeIf { liveTvSupportsPagination && page.items.isNotEmpty() }
+            liveTvFailed = false
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            liveTvItems = emptyList()
+            liveTvNextSkip = null
+            liveTvFailed = true
+        }
+    }
+
+    suspend fun loadMoreLiveTv() {
+        val skip = liveTvNextSkip ?: return
+        if (liveTvLoadingMore) return
+        liveTvLoadingMore = true
+        try {
+            val page = fetchCatalogPage(
+                manifestUrl = manifestUrl,
+                type = SPORTS_CATALOG_TYPE,
+                catalogId = SportsAddon.CATALOG_NETWORKS,
+                search = liveTvSearch,
+                skip = skip,
+                maxItems = LIVE_TV_PAGE_ITEMS,
+            )
+            val known = liveTvItems.mapTo(HashSet()) { it.stableKey() }
+            val fresh = page.items.filter { known.add(it.stableKey()) }
+            liveTvItems = liveTvItems + fresh
+            // Stop when a page adds nothing new, so a catalog ignoring `skip` cannot loop.
+            liveTvNextSkip = page.nextSkip?.takeIf { fresh.isNotEmpty() }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            liveTvNextSkip = null
+        } finally {
+            liveTvLoadingMore = false
+        }
+    }
+
+    LaunchedEffect(isLiveTv, liveTvSearch, manifestUrl, reloadToken) {
+        if (!isLiveTv) return@LaunchedEffect
+        if (liveTvSearch != null) delay(LIVE_TV_SEARCH_DEBOUNCE_MS)
+        liveTvLoading = true
+        liveTvNextSkip = null
+        loadLiveTvFirstPage(forceRefresh = reloadToken > 0)
+        liveTvLoading = false
+    }
+
     suspend fun fetchRow(spec: SportsRowSpec, forceRefresh: Boolean): SportsRowResult =
         try {
             val page = fetchCatalogPage(
@@ -234,6 +315,7 @@ fun SportsScreen(
     }
 
     LaunchedEffect(specs, manifestUrl, reloadToken) {
+        if (isLiveTv) return@LaunchedEffect
         isLoading = true
         loadAll(forceRefresh = reloadToken > 0)
         isLoading = false
@@ -267,7 +349,7 @@ fun SportsScreen(
             scope.launch {
                 isRefreshing = true
                 try {
-                    loadAll(forceRefresh = true)
+                    if (isLiveTv) loadLiveTvFirstPage(forceRefresh = true) else loadAll(forceRefresh = true)
                 } finally {
                     isRefreshing = false
                 }
@@ -277,6 +359,7 @@ fun SportsScreen(
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val sectionPadding = homeSectionHorizontalPaddingForWidth(maxWidth.value)
+            val liveTvColumns = liveTvGridColumns(maxWidth)
             NuvioScreen(
                 modifier = Modifier.fillMaxSize(),
                 horizontalPadding = 0.dp,
@@ -297,7 +380,24 @@ fun SportsScreen(
                         onSelected = { selectedFilterName = it.name },
                     )
                 }
-                if (rows.isEmpty()) {
+                if (isLiveTv) {
+                    liveTvContent(
+                        items = liveTvItems,
+                        query = liveTvQuery,
+                        onQueryChange = { liveTvQuery = it },
+                        showSearch = liveTvSupportsSearch,
+                        isLoading = liveTvLoading,
+                        isLoadingMore = liveTvLoadingMore,
+                        isError = liveTvFailed,
+                        hasMore = liveTvNextSkip != null,
+                        columns = liveTvColumns,
+                        sectionPadding = sectionPadding,
+                        onLoadMore = { scope.launch { loadMoreLiveTv() } },
+                        onRetry = { reloadToken++ },
+                        onPosterClick = onPosterClick,
+                        onPosterLongClick = onPosterLongClick,
+                    )
+                } else if (rows.isEmpty()) {
                     item(key = "sports_state") {
                         SportsStateMessage(
                             isLoading = isLoading,
@@ -332,10 +432,11 @@ private fun buildRowSpecs(
     networksTitle: String,
     replaysTitle: String,
 ): List<SportsRowSpec> = buildList {
+    if (filter == SportFilter.LiveTv) return@buildList
     if (filter == SportFilter.All) {
         add(SportsRowSpec(key = "live", title = liveTitle, catalogId = SportsAddon.CATALOG_LIVE, isLive = true))
         add(SportsRowSpec(key = "upcoming", title = upcomingTitle, catalogId = SportsAddon.CATALOG_UPCOMING))
-        SportFilter.entries.filter { it != SportFilter.All }.forEach { sport ->
+        SportFilter.entries.filter { it != SportFilter.All && it != SportFilter.LiveTv }.forEach { sport ->
             val catalogId = sport.catalogId ?: return@forEach
             add(SportsRowSpec(key = "sport_${sport.sportKey}", title = filterLabels[sport].orEmpty(), catalogId = catalogId))
         }
@@ -505,6 +606,106 @@ private fun SportChip(
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
             maxLines = 1,
         )
+    }
+}
+
+private fun AddonCatalog.supportsSearchExtra(): Boolean =
+    extra.any { property -> property.name.equals("search", ignoreCase = true) }
+
+/** Channel logos are landscape, so the grid is denser than the poster catalogs. */
+private fun liveTvGridColumns(width: androidx.compose.ui.unit.Dp): Int =
+    when {
+        width >= 1200.dp -> 5
+        width >= 840.dp -> 4
+        width >= 600.dp -> 3
+        else -> 2
+    }
+
+private fun androidx.compose.foundation.lazy.LazyListScope.liveTvContent(
+    items: List<MetaPreview>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    showSearch: Boolean,
+    isLoading: Boolean,
+    isLoadingMore: Boolean,
+    isError: Boolean,
+    hasMore: Boolean,
+    columns: Int,
+    sectionPadding: androidx.compose.ui.unit.Dp,
+    onLoadMore: () -> Unit,
+    onRetry: () -> Unit,
+    onPosterClick: ((MetaPreview) -> Unit)?,
+    onPosterLongClick: ((MetaPreview) -> Unit)?,
+) {
+    if (showSearch) {
+        item(key = "live_tv_search") {
+            NuvioInputField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = stringResource(Res.string.sports_live_tv_search_placeholder),
+                modifier = Modifier.padding(horizontal = sectionPadding, vertical = 4.dp),
+            )
+        }
+    }
+    if (items.isEmpty()) {
+        item(key = "live_tv_state") {
+            if (isLoading || isError) {
+                SportsStateMessage(isLoading = isLoading, isError = isError, onRetry = onRetry)
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(top = 64.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.sports_live_tv_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                    )
+                }
+            }
+        }
+        return
+    }
+    val gridRows = items.chunked(columns.coerceAtLeast(1))
+    gridRows.forEachIndexed { index, rowItems ->
+        item(key = "live_tv_row_${rowItems.first().stableKey()}") {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = sectionPadding, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                rowItems.forEach { item ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        HomePosterCard(
+                            item = item,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = onPosterClick?.let { { it(item) } },
+                            onLongClick = onPosterLongClick?.let { { it(item) } },
+                        )
+                    }
+                }
+                repeat(columns - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            // Reaching the last rows loads the next page.
+            if (hasMore && index >= gridRows.lastIndex - 1) {
+                LaunchedEffect(items.size) { onLoadMore() }
+            }
+        }
+    }
+    if (isLoadingMore) {
+        item(key = "live_tv_loading_more") {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                NuvioLoadingIndicator()
+            }
+        }
     }
 }
 

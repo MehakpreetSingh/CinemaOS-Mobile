@@ -105,6 +105,7 @@ internal fun PlayerScreenRuntime.showSeekFeedback(direction: PlayerSeekDirection
 }
 
 internal fun PlayerScreenRuntime.showHorizontalSeekPreview(previewPositionMs: Long, baselinePositionMs: Long) {
+    if (isLivePlayback) return
     val deltaMs = previewPositionMs - baselinePositionMs
     val direction = if (deltaMs < 0L) PlayerSeekDirection.Backward else PlayerSeekDirection.Forward
     liveGestureFeedback = GestureFeedbackState(
@@ -204,6 +205,7 @@ internal fun PlayerScreenRuntime.setPlaybackPlaying(playing: Boolean) {
 }
 
 internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
+    if (isLivePlayback) return
     val fromMs = pendingSeekTarget
         ?.takeIf { (_, mark) -> mark.elapsedNow() < PendingSeekWindow }
         ?.first
@@ -225,6 +227,7 @@ internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
 }
 
 internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirection) {
+    if (isLivePlayback) return
     val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
     val currentSeekState = accumulatedSeekState
     val nextState = if (currentSeekState?.direction == direction) {
@@ -277,7 +280,7 @@ internal fun PlayerScreenRuntime.cycleResizeMode() {
 }
 
 internal fun PlayerScreenRuntime.cyclePlaybackSpeed() {
-    if (partyBlocksControl()) return
+    if (partyBlocksControl() || isLivePlayback) return
     val speeds = listOf(1f, 1.25f, 1.5f, 2f)
     val current = playbackSnapshot.playbackSpeed
     val next = speeds.firstOrNull { it > current + 0.01f } ?: speeds.first()
@@ -289,7 +292,7 @@ internal fun PlayerScreenRuntime.cyclePlaybackSpeed() {
 }
 
 internal fun PlayerScreenRuntime.activateHoldToSpeed() {
-    if (!playerSettingsUiState.holdToSpeedEnabled) return
+    if (!playerSettingsUiState.holdToSpeedEnabled || isLivePlayback) return
     if (isPartySynced) return
     val controller = playerController ?: return
     if (speedBoostRestoreSpeed != null) return
@@ -336,7 +339,8 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
             revealLockedOverlay()
             return@rememberUpdatedState
         }
-        if (!playerSettingsUiState.touchGesturesEnabled) {
+        // Live streams cannot seek, so a double tap only toggles the controls.
+        if (!playerSettingsUiState.touchGesturesEnabled || isLivePlayback) {
             controlsVisible = !controlsVisible
             return@rememberUpdatedState
         }
@@ -366,6 +370,7 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
         currentPositionMs = rememberUpdatedState(playbackSnapshot.positionMs.coerceAtLeast(0L)),
         currentDurationMs = rememberUpdatedState(playbackSnapshot.durationMs),
         commitHorizontalSeek = rememberUpdatedState { requestedPositionMs: Long ->
+            if (isLivePlayback) return@rememberUpdatedState
             val targetPositionMs = if (isPartyControlLocked) {
                 ownSeekTarget(requestedPositionMs) ?: return@rememberUpdatedState
             } else {

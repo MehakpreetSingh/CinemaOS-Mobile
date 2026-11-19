@@ -2334,6 +2334,8 @@ private fun ExoPlayer.snapshot(): PlayerPlaybackSnapshot {
         playbackSpeed = playbackParameters.speed,
         videoWidth = videoWidth,
         videoHeight = videoHeight,
+        isLive = isCurrentMediaItemLive ||
+            (playbackState == Player.STATE_READY && duration == C.TIME_UNSET),
     )
 }
 

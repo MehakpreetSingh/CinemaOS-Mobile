@@ -216,25 +216,111 @@ internal fun StreamItem.parsedInfo(): ParsedStreamInfo = parseStreamInfo(
     videoSizeBytes = behaviorHints.videoSize,
 )
 
+/** One row of the Quality menu: every loaded source at one resolution class. */
+internal data class QualityGroup(
+    /** Resolution class: 2160, 1440, 1080, 720, 480, or 0 for SD / unknown. */
+    val bucket: Int,
+    /** The stream shown for the row and played when it is tapped. */
+    val best: StreamItem,
+    val bestInfo: ParsedStreamInfo,
+    val sourceCount: Int,
+    val isCurrent: Boolean,
+)
+
+internal fun qualityBucketOf(height: Int): Int = when {
+    height >= 2160 -> 2160
+    height >= 1440 -> 1440
+    height >= 1080 -> 1080
+    height >= 720 -> 720
+    height >= 480 -> 480
+    else -> 0
+}
+
+/** Short tile label for a resolution class, the same style the source rows use. */
+internal fun qualityBucketLabel(bucket: Int): String = when (bucket) {
+    2160 -> "4K"
+    0 -> "SD"
+    else -> "${bucket}p"
+}
+
+private val FHD_REGEX = Regex("""\bfhd\b""", RegexOption.IGNORE_CASE)
+private val QHD_REGEX = Regex("""\b(qhd|2k)\b""", RegexOption.IGNORE_CASE)
+private val HD_REGEX = Regex("""\bhd\b""", RegexOption.IGNORE_CASE)
+
 /**
- * Streams that are the same release as [current] at other qualities: same add-on and the same
- * name once resolution and size tokens are removed. Sorted best quality first, one per quality.
+ * [parsedInfo], plus a height guessed from word labels (FHD, HD...) that live sports and other
+ * addons use instead of a number. Only applied when the number-based parser found nothing.
  */
-internal fun qualityVariantsOf(
+private fun StreamItem.parsedQualityInfo(): ParsedStreamInfo {
+    val info = parsedInfo()
+    if (info.qualityHeight > 0) return info
+    val text = listOf(name, title, description).filterNotNull().joinToString(" ")
+    val guessed = when {
+        FHD_REGEX.containsMatchIn(text) -> 1080
+        QHD_REGEX.containsMatchIn(text) -> 1440
+        HD_REGEX.containsMatchIn(text) -> 720
+        else -> return info
+    }
+    return info.copy(qualityHeight = guessed, qualityLabel = "${guessed}p")
+}
+
+private fun ParsedStreamInfo.sizeBytes(): Long {
+    val m = sizeLabel?.let { SIZE_REGEX.find(it) } ?: return 0L
+    val value = m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return 0L
+    val unit = if (m.groupValues[2].startsWith("g", ignoreCase = true)) 1024.0 * 1024.0 * 1024.0 else 1024.0 * 1024.0
+    return (value * unit).toLong()
+}
+
+private fun ParsedStreamInfo.badgeCount(): Int =
+    listOf(imax, dolbyVision, hdr10Plus, hdr10, hdr, atmos, tenBit, multiAudio).count { it } +
+        audioFormats.size + sourceTypes.size + (if (channels != null) 1 else 0) + (if (codec != null) 1 else 0)
+
+/**
+ * Groups every playable source in [streams] (all add-ons) by resolution class, best class first,
+ * one entry per class. The row's stream is chosen by, in order: same add-on as the playing one,
+ * ready to play (direct link or cached debrid), larger size, then richer badges; earlier in the
+ * list wins a tie. The playing stream represents its own class so the row describes what is on
+ * screen.
+ */
+internal fun qualityGroupsOf(
     streams: List<StreamItem>,
     current: PlayerCurrentStream,
-): List<Pair<StreamItem, ParsedStreamInfo>> {
-    val currentInfo = parseStreamInfo(listOf(current.name, current.description, current.filename))
-    val sameAddon = streams.filter { current.addonId.isNullOrBlank() || it.addonId == current.addonId }
+): List<QualityGroup> {
     val currentIndex = streams.currentPlayerStreamIndex(current)
-    val currentKey = if (currentIndex >= 0) streams[currentIndex].parsedInfo().releaseKey else currentInfo.releaseKey
-    val parsed = sameAddon.filter { it.playableDirectUrl != null || it.hasPlayableSource }.map { it to it.parsedInfo() }
-    val matching = parsed.filter { (_, info) -> info.releaseKey == currentKey }
-    val pool = if (matching.size > 1) matching else parsed.filter { it.second.qualityHeight > 0 }
-    return pool
-        .groupBy { it.second.qualityHeight }
-        .map { (_, list) -> list.first() }
-        .sortedByDescending { it.second.qualityHeight }
+    val currentStream = streams.getOrNull(currentIndex)
+    val currentInfo = currentStream?.parsedQualityInfo()
+        ?: parseStreamInfo(listOf(current.name, current.description, current.filename))
+    val currentBucket = qualityBucketOf(currentInfo.qualityHeight)
+    val currentAddon = currentStream?.addonId ?: current.addonId?.takeIf { it.isNotBlank() }
+
+    val candidates = streams
+        .filter { it.playableDirectUrl != null || it.hasPlayableSource }
+        .map { it to it.parsedQualityInfo() }
+    val ranked = compareByDescending<Pair<StreamItem, ParsedStreamInfo>> { (stream, _) ->
+        currentAddon != null && stream.addonId == currentAddon
+    }.thenByDescending { (stream, _) ->
+        stream.playableDirectUrl != null || stream.isCachedDebridTorrentStream
+    }.thenByDescending { (stream, info) ->
+        info.sizeBytes().takeIf { it > 0 } ?: stream.debridCacheStatus?.cachedSize ?: 0L
+    }.thenByDescending { (stream, info) ->
+        info.badgeCount() + stream.badges.size
+    }
+
+    return candidates
+        .groupBy { qualityBucketOf(it.second.qualityHeight) }
+        .map { (bucket, list) ->
+            val isCurrent = bucket == currentBucket
+            val playing = if (isCurrent && currentStream != null) list.firstOrNull { it.first === currentStream } else null
+            val best = playing ?: list.sortedWith(ranked).first()
+            QualityGroup(
+                bucket = bucket,
+                best = best.first,
+                bestInfo = best.second,
+                sourceCount = list.size,
+                isCurrent = isCurrent,
+            )
+        }
+        .sortedByDescending { it.bucket }
 }
 
 private val GENERIC_TRACK_LABEL = Regex("""^\s*(audio|track|stream)?\s*#?\s*\d*\s*$""", RegexOption.IGNORE_CASE)

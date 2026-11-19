@@ -421,6 +421,8 @@ internal fun PlayerScreenRuntime.flushWatchProgress(
         TrackingScrobbleAction.STOP -> emitAddonPlayerEvent(AddonPlayerAction.STOP)
         TrackingScrobbleAction.START -> Unit
     }
+    // Live streams have no resumable position, so nothing is saved for them.
+    if (isLivePlayback) return
     WatchProgressRepository.flushPlaybackProgress(
         session = playbackSession,
         snapshot = playbackSnapshot,
@@ -428,6 +430,7 @@ internal fun PlayerScreenRuntime.flushWatchProgress(
 }
 
 internal fun PlayerScreenRuntime.scheduleProgressSyncAfterSeek() {
+    if (isLivePlayback) return
     val shouldRestartScrobbleAfterSeek = shouldPlay || playbackSnapshot.isPlaying
     seekProgressSyncJob?.cancel()
     seekProgressSyncJob = scope.launch {
@@ -482,6 +485,7 @@ internal fun PlayerScreenRuntime.scheduleProgressSyncAfterSeek() {
 }
 
 internal fun PlayerScreenRuntime.persistPlaybackProgressTick() {
+    if (isLivePlayback) return
     val now = WatchProgressClock.nowEpochMs()
     if (now - lastProgressPersistEpochMs < PlaybackProgressPersistIntervalMs) return
     lastProgressPersistEpochMs = now

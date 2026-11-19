@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_live_badge">LIVE</string>
+    <string name="sports_filter_live_tv">📺 Live TV</string>
+    <string name="sports_live_tv_search_placeholder">Search channels</string>
+    <string name="sports_live_tv_empty">No channels found.</string>
+</resources>
