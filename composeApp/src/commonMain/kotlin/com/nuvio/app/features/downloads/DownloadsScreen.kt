@@ -42,6 +42,7 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioScreenHeader
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.core.ui.PlatformBackHandler
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -75,6 +76,10 @@ fun DownloadsScreen(
         selectedShowId?.let { showId ->
             completedEpisodes.firstOrNull { it.parentMetaId == showId }?.title
         }
+    }
+
+    PlatformBackHandler(enabled = selectedShowId != null && onBackFromShow == null) {
+        selectedShowId = null
     }
 
     NuvioScreen {
