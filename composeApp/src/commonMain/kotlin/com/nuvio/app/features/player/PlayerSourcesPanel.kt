@@ -37,7 +37,6 @@ import nuvio.composeapp.generated.resources.compose_player_panel_sources
 import nuvio.composeapp.generated.resources.collections_tab_all
 import nuvio.composeapp.generated.resources.compose_player_playing
 import nuvio.composeapp.generated.resources.streams_refresh
-import nuvio.composeapp.generated.resources.streams_download_file
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -110,13 +109,6 @@ fun PlayerSourcesPanel(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            val allStreams = streamsUiState.groups.flatMap { it.streams }
-            allStreams.getOrNull(allStreams.currentPlayerStreamIndex(currentStream))?.let { playing ->
-                PlayerDialogButton(
-                    label = stringResource(Res.string.streams_download_file),
-                    onClick = { onDownloadStream(playing) },
-                )
-            }
             Spacer(Modifier.height(12.dp))
 
             // Two columns like the TV and phone apps: sources on the left, the links of the selected one on the right.
@@ -135,6 +127,7 @@ fun PlayerSourcesPanel(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                         currentStream = currentStream,
                         currentLabel = stringResource(Res.string.compose_player_playing),
+                        onDownloadStream = onDownloadStream,
                     )
                 }
             }

@@ -49,6 +49,7 @@ internal fun PlayerStreamList(
     ),
     currentStream: PlayerCurrentStream? = null,
     currentLabel: String? = null,
+    onDownloadStream: ((StreamItem) -> Unit)? = null,
 ) {
     val debridSettings by remember {
         DebridSettingsRepository.ensureLoaded()
@@ -133,6 +134,7 @@ internal fun PlayerStreamList(
                         currentLabel = currentLabel,
                         partyLabel = if (index == currentStreamIndex) null else highlight(stream),
                         onClick = { onStreamSelected(stream) },
+                        onDownload = onDownloadStream?.let { download -> { download(stream) } },
                     )
                 }
                 if (streamsUiState.isAnyLoading) {

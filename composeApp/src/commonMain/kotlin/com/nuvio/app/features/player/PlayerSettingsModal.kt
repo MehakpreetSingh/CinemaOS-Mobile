@@ -77,7 +77,8 @@ internal fun PlayerSettingsModal(
                     }
                 }
                 val detail: @Composable (Modifier) -> Unit = { detailModifier ->
-                    Column(detailModifier.clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = 0.045f)).padding(18.dp),
+                    Column(detailModifier.clip(RoundedCornerShape(18.dp)).background(Color.Black.copy(alpha = 0.88f))
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(18.dp)).padding(18.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(selected.page.titleRes), color = Color.White,
                             style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)

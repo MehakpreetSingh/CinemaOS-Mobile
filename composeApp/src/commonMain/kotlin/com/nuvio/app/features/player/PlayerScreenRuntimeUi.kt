@@ -803,7 +803,10 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         onSourceFilterSelected = PlayerStreamsRepository::selectSourceFilter,
         onSourceStreamSelected = { stream -> switchToSource(stream) },
         onDownloadSourceStream = { stream ->
-            if (activeTorrentInfoHash != null || !activeSourceAudioUrl.isNullOrBlank()) {
+            if (!isPlayingSourceStream(stream)) {
+                // Rows other than the playing one download their own link (see PlayerSourceDownloads.kt).
+                downloadOtherSourceStream(stream)
+            } else if (activeTorrentInfoHash != null || !activeSourceAudioUrl.isNullOrBlank()) {
                 com.nuvio.app.core.ui.NuvioToastController.show(
                     com.nuvio.app.features.downloads.DownloadEnqueueResult.UnsupportedFormat.toastMessage(),
                 )

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,7 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -37,7 +42,9 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.brand_dolby_mark
 import nuvio.composeapp.generated.resources.brand_dolby_vision
 import nuvio.composeapp.generated.resources.brand_hdr10plus
+import nuvio.composeapp.generated.resources.cinemaos_player_source_download
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.features.streams.StreamItem
 
 private enum class ChipTone { Quality, Accent, Neutral }
@@ -204,6 +211,14 @@ internal fun StreamInfoChipRow(info: ParsedStreamInfo, modifier: Modifier = Modi
     }
 }
 
+private val TrailingInfoWidth = 64.dp
+private val DownloadButtonSize = 40.dp
+
+/**
+ * One link in the player's sources list. Tapping the row plays it; the trailing area shows the
+ * resolution and size in a fixed-width column (so they line up row to row) and, when given, a
+ * separate download button that does not trigger playback.
+ */
 @Composable
 internal fun PlayerSourceCard(
     stream: StreamItem,
@@ -213,12 +228,13 @@ internal fun PlayerSourceCard(
     partyLabel: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onDownload: (() -> Unit)? = null,
 ) {
     val tokens = MaterialTheme.nuvio
     val info = remember(stream) { stream.parsedInfo() }
     val shape = RoundedCornerShape(14.dp)
     val accent = MaterialTheme.colorScheme.primary
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 68.dp)
@@ -229,65 +245,165 @@ internal fun PlayerSourceCard(
                 shape,
             )
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stream.streamLabel,
-                modifier = Modifier.weight(1f, fill = false),
-                color = if (enabled) tokens.colors.textPrimary else tokens.colors.textMuted,
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (isCurrent && !currentLabel.isNullOrBlank()) {
-                Spacer(Modifier.width(8.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = currentLabel,
-                    color = accent,
-                    fontSize = 11.sp,
+                    text = stream.streamLabel,
+                    modifier = Modifier.weight(1f, fill = false),
+                    color = if (enabled) tokens.colors.textPrimary else tokens.colors.textMuted,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                if (isCurrent && !currentLabel.isNullOrBlank()) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = currentLabel,
+                        color = accent,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                }
+                if (partyLabel != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = partyLabel,
+                        color = accent,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            if (partyLabel != null) {
-                Spacer(Modifier.width(8.dp))
+            val subtitleLines = stream.streamSubtitle.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
+            subtitleLines.firstOrNull()?.let { subtitle ->
                 Text(
-                    text = partyLabel,
-                    color = accent,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
+                    text = subtitle,
+                    color = tokens.colors.textPrimary,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            if (subtitleLines.size > 1) {
+                Text(
+                    text = subtitleLines.drop(1).joinToString(" "),
+                    color = tokens.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 10.5.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            // Quality and size live in the trailing column, so the badges here are format facts only.
+            val formatInfo = remember(info) { info.copy(qualityLabel = null, sizeLabel = null) }
+            StreamInfoChipRow(info = formatInfo, modifier = Modifier.fillMaxWidth())
         }
-        val subtitleLines = stream.streamSubtitle.orEmpty().lines().map { it.trim() }.filter { it.isNotEmpty() }
-        subtitleLines.firstOrNull()?.let { subtitle ->
-            Text(
-                text = subtitle,
-                color = tokens.colors.textPrimary,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 12.sp,
-                lineHeight = 17.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+        Spacer(Modifier.width(10.dp))
+        SourceTrailingInfo(
+            qualityLabel = info.qualityLabel,
+            sizeLabel = info.sizeLabel,
+            highlighted = isCurrent,
+        )
+        if (onDownload != null) {
+            Spacer(Modifier.width(6.dp))
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(28.dp)
+                    .background(tokens.colors.borderSubtle),
             )
+            Spacer(Modifier.width(6.dp))
+            if (enabled) {
+                SourceDownloadButton(onClick = onDownload)
+            } else {
+                Spacer(Modifier.size(DownloadButtonSize))
+            }
         }
-        if (subtitleLines.size > 1) {
+    }
+}
+
+/** Resolution pill over the file size, centred in a fixed-width column. */
+@Composable
+private fun SourceTrailingInfo(
+    qualityLabel: String?,
+    sizeLabel: String?,
+    highlighted: Boolean,
+) {
+    val tokens = MaterialTheme.nuvio
+    val accent = MaterialTheme.colorScheme.primary
+    Column(
+        modifier = Modifier.width(TrailingInfoWidth),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+    ) {
+        if (qualityLabel != null) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(if (highlighted) accent else accent.copy(alpha = 0.16f))
+                    .border(BorderStroke(1.dp, accent.copy(alpha = 0.6f)), RoundedCornerShape(7.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = qualityLabel,
+                    color = if (highlighted) MaterialTheme.colorScheme.onPrimary else tokens.colors.textPrimary,
+                    fontSize = 12.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.3.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
+        if (sizeLabel != null) {
             Text(
-                text = subtitleLines.drop(1).joinToString(" "),
+                text = sizeLabel,
                 color = tokens.colors.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 10.5.sp,
-                lineHeight = 14.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false,
+                textAlign = TextAlign.Center,
             )
         }
-        StreamInfoChipRow(info = info, modifier = Modifier.fillMaxWidth())
+    }
+}
+
+/** Round secondary action: its own touch target, so it never starts playback. */
+@Composable
+private fun SourceDownloadButton(onClick: () -> Unit) {
+    val tokens = MaterialTheme.nuvio
+    Box(
+        modifier = Modifier
+            .size(DownloadButtonSize)
+            .clip(CircleShape)
+            .background(tokens.colors.textPrimary.copy(alpha = 0.08f))
+            .border(BorderStroke(1.dp, tokens.colors.borderSubtle), CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Download,
+            contentDescription = stringResource(Res.string.cinemaos_player_source_download),
+            tint = tokens.colors.textPrimary,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
