@@ -323,7 +323,10 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
                 title = title,
                 episode = if (isEpisode) "S$activeSeasonNumber E$activeEpisodeNumber${activeEpisodeTitle?.let { " · $it" }.orEmpty()}" else null,
                 visible = introVisible,
-                modifier = Modifier.align(Alignment.TopStart).padding(start = 32.dp, top = 24.dp),
+                logoUrl = metaUiState.meta?.logo,
+                metaLine = metaUiState.meta?.let { playbackTitleMetaLine(it.releaseInfo, it.genres, it.runtime) }.orEmpty(),
+                rating = metaUiState.meta?.imdbRating,
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 48.dp, top = 44.dp),
             )
             // One owner for playback loading, independent of visible, hidden, locked or folded controls.
             val hasPlaybackSource = activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null

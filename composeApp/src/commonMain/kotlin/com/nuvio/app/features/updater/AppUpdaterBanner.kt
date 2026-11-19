@@ -1,6 +1,18 @@
 package com.nuvio.app.features.updater
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -101,17 +113,13 @@ fun AppUpdaterHost(
     val update = state.update
     val showBanner = state.showDialog && update != null
 
-    Column(modifier = modifier) {
+    Box(modifier = modifier) {
+        content()
         AnimatedVisibility(
             visible = showBanner,
-            enter = expandVertically(
-                expandFrom = Alignment.Top,
-                animationSpec = tween(durationMillis = 300),
-            ) + fadeIn(animationSpec = tween(durationMillis = 180)),
-            exit = shrinkVertically(
-                shrinkTowards = Alignment.Top,
-                animationSpec = tween(durationMillis = 240),
-            ) + fadeOut(animationSpec = tween(durationMillis = 150)),
+            modifier = Modifier.align(Alignment.TopCenter),
+            enter = slideInVertically(tween(320)) { -it } + fadeIn(tween(220)),
+            exit = slideOutVertically(tween(240)) { -it } + fadeOut(tween(160)),
         ) {
             update?.let { availableUpdate ->
                 AppUpdateBanner(
@@ -123,21 +131,6 @@ fun AppUpdaterHost(
                     onDismiss = controller::dismissDialog,
                 )
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .then(
-                    if (showBanner) {
-                        Modifier.consumeWindowInsets(WindowInsets.statusBars)
-                    } else {
-                        Modifier
-                    },
-                ),
-        ) {
-            content()
         }
     }
 
@@ -165,22 +158,13 @@ private fun AppUpdateBanner(
     onShowReleaseNotes: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val tokens = MaterialTheme.nuvio
     val targetProgress = when {
         state.isDownloading -> state.downloadProgress ?: 0f
         state.isDebugTest && !state.isUpdateAvailable -> 1f
         else -> 0f
     }.coerceIn(0f, 1f)
-    val progress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(durationMillis = 180),
-        label = "updateBannerProgress",
-    )
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    val isWhiteTheme = MaterialTheme.appTheme == AppTheme.WHITE || MaterialTheme.appTheme == AppTheme.CINEMAOS
-    val progressBrush = MaterialTheme.themePalette.accentBrush()
-    val progressAlpha = if (isWhiteTheme) 0.18f else 1f
-    val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+    val progress by animateFloatAsState(targetProgress, tween(180), label = "updateBannerProgress")
+    val accent = MaterialTheme.themePalette.accentBrush()
     val debugTestComplete = state.isDebugTest && !state.isDownloading && !state.isUpdateAvailable
     val subtitle = when {
         state.errorMessage != null -> state.errorMessage
@@ -191,114 +175,95 @@ private fun AppUpdateBanner(
         state.isDownloading -> stringResource(Res.string.updates_preparing_download)
         debugTestComplete -> stringResource(Res.string.updates_debug_test_complete)
         state.downloadedApkPath != null -> stringResource(Res.string.updates_message_ready)
-        else -> stringResource(Res.string.updates_title_available)
+        else -> listOfNotNull(
+            stringResource(Res.string.updates_title_available),
+            update.assetSizeBytes?.let(::formatFileSize),
+        ).joinToString(" · ")
     }
-    val updateLabel = listOfNotNull(
-        update.tag,
-        update.assetSizeBytes?.let(::formatFileSize),
-    ).joinToString(separator = " • ")
+    val cardShape = RoundedCornerShape(22.dp)
+    val ink = Color.White
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .drawBehind {
-                drawRect(containerColor)
-                if (progress > 0f) {
-                    drawRect(
-                        brush = progressBrush,
-                        alpha = progressAlpha,
-                        size = Size(width = size.width * progress, height = size.height),
-                    )
-                }
-                drawRect(
-                    color = dividerColor,
-                    topLeft = Offset(0f, size.height - 1.dp.toPx()),
-                    size = Size(width = size.width, height = 1.dp.toPx()),
-                )
-            }
-            .windowInsetsPadding(WindowInsets.statusBars),
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .shadow(24.dp, cardShape, ambientColor = Color.Black, spotColor = Color.Black)
+            .clip(cardShape)
+            .background(Color(0xF2141418))
+            .border(1.dp, Color.White.copy(alpha = 0.10f), cardShape),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 68.dp)
-                .padding(horizontal = tokens.spacing.screenHorizontal, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(
-                imageVector = if (debugTestComplete) Icons.Rounded.CheckCircle else Icons.Rounded.CloudDownload,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(24.dp),
-            )
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp, top = 12.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = updateLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = when {
-                        state.errorMessage != null -> MaterialTheme.colorScheme.error
-                        state.isDownloading && isWhiteTheme -> MaterialTheme.colorScheme.onSurface
-                        state.isDownloading -> MaterialTheme.colorScheme.onPrimary
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 2,
-                )
-            }
-
-            IconButton(
-                onClick = onShowReleaseNotes,
-                enabled = update.notes.isNotBlank(),
-                modifier = Modifier.size(40.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Info,
-                    contentDescription = stringResource(Res.string.updates_release_notes),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-
-            if (!state.isDownloading && !debugTestComplete) {
-                Button(
-                    onClick = if (state.downloadedApkPath != null) onInstall else onDownload,
-                    enabled = state.downloadedApkPath != null || state.isUpdateAvailable,
-                    modifier = Modifier.heightIn(min = 40.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                ) {
-                    Text(
-                        if (state.downloadedApkPath != null) {
-                            stringResource(Res.string.action_install)
-                        } else if (state.errorMessage != null) {
-                            stringResource(Res.string.action_retry)
-                        } else {
-                            stringResource(Res.string.action_update)
-                        },
-                    )
-                }
-            }
-
-            if (!state.isDownloading) {
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.size(40.dp),
+                Box(
+                    modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(accent),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = stringResource(Res.string.action_close),
-                        tint = MaterialTheme.colorScheme.onSurface,
+                        imageVector = if (debugTestComplete) Icons.Rounded.CheckCircle else Icons.Rounded.SystemUpdate,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp),
                     )
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "CinemaOS ${update.tag.removePrefix("v").let { "v$it" }}",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = ink,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (state.errorMessage != null) Color(0xFFFF8A80) else ink.copy(alpha = 0.62f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (update.notes.isNotBlank()) {
+                    IconButton(onClick = onShowReleaseNotes, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Rounded.Info, stringResource(Res.string.updates_release_notes),
+                            tint = ink.copy(alpha = 0.75f), modifier = Modifier.size(20.dp))
+                    }
+                }
+                if (!state.isDownloading && !debugTestComplete) {
+                    val canAct = state.downloadedApkPath != null || state.isUpdateAvailable
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (canAct) Color.White else Color.White.copy(alpha = 0.3f))
+                            .clickable(enabled = canAct, onClick = if (state.downloadedApkPath != null) onInstall else onDownload)
+                            .padding(horizontal = 16.dp, vertical = 9.dp),
+                    ) {
+                        Text(
+                            text = when {
+                                state.downloadedApkPath != null -> stringResource(Res.string.action_install)
+                                state.errorMessage != null -> stringResource(Res.string.action_retry)
+                                else -> stringResource(Res.string.action_update)
+                            },
+                            color = Color.Black,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+                if (!state.isDownloading) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Rounded.Close, stringResource(Res.string.action_close),
+                            tint = ink.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+            if (state.isDownloading || progress > 0f) {
+                Box(Modifier.fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = 0.08f))) {
+                    Box(Modifier.fillMaxWidth(progress).height(3.dp).background(accent))
                 }
             }
         }
