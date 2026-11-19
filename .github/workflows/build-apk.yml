@@ -102,6 +102,8 @@ jobs:
           ./gradlew :composeApp:testAndroidHostTest \
             --tests '*StreamingBufferProfileTest' \
             --tests '*AdaptiveStreamDownloadsTest' \
+            --tests '*LoadingIndicatorTest' \
+            --tests '*SettingsNavigationTest' \
             --tests '*AndroidDownloadTransferTest' \
             --tests '*StreamInfoParserTest' \
             --tests '*EpisodeRatingsAlignmentTest' \

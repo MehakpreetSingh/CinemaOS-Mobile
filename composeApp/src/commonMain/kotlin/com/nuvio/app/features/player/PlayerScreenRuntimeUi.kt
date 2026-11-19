@@ -13,9 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,8 +35,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.ui.NuvioStatusModal
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
-import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.core.ui.LocalFold
 import com.nuvio.app.features.p2p.P2pStreamingState
 import com.nuvio.app.features.party.PartyRepository
@@ -44,7 +43,6 @@ import com.nuvio.app.features.p2p.formatP2pSpeed
 import com.nuvio.app.features.player.skip.internalSkipAction
 import com.nuvio.app.features.servers.ServerStreams
 import com.nuvio.app.features.streams.streamAddonInstanceId
-import com.nuvio.app.isIos
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -314,15 +312,13 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
             modifier = panelModifier,
         )
         Box(modifier = videoModifier) {
-            // Controls can auto-hide or be locked while the engine is seeking/buffering.
-            // Keep loading feedback on the video surface in either case.
+            // One owner for playback loading, independent of visible, hidden, locked or folded controls.
             val hasPlaybackSource = activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null
             val awaitingInitialPlayback = !initialLoadCompleted && hasPlaybackSource
             if (!isInPip && errorMessage == null && hasPlaybackSource &&
-                (playbackSnapshot.isLoading || awaitingInitialPlayback) &&
-                (playerControlsLocked || (!controlsVisible && !awaitingInitialPlayback && fold == null))
+                (playbackSnapshot.isLoading || awaitingInitialPlayback)
             ) {
-                NuvioLoadingIndicator(
+                CinemaosGradientLoader(
                     modifier = Modifier.align(Alignment.Center).size(metrics.playIconSize + 20.dp),
                 )
             }
@@ -760,6 +756,27 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         onSubtitleModalDismissed = { showSubtitleModal = false },
         showVideoSettingsModal = showVideoSettingsModal,
         playerSettings = playerSettingsUiState,
+        settingsQuickActions = buildList {
+            add(PlayerSettingsQuickAction(stringResource(Res.string.compose_player_speed), formatPlaybackSpeedLabel(playbackSnapshot.playbackSpeed), { cyclePlaybackSpeed() }))
+            add(PlayerSettingsQuickAction(stringResource(Res.string.cinemaos_player_aspect_ratio), stringResource(resizeMode.labelRes), { cycleResizeMode() }))
+            if (activeVideoId != null) add(PlayerSettingsQuickAction(stringResource(Res.string.cinemaos_player_quality), onClick = {
+                showVideoSettingsModal = false; openQualityPanel()
+            }))
+            if (playerController?.playbackEngine != null) add(PlayerSettingsQuickAction(stringResource(Res.string.cd_switch_player_engine), onClick = {
+                showVideoSettingsModal = false; showSwitchEngineConfirm = true
+            }))
+            if (chapters.isNotEmpty()) add(PlayerSettingsQuickAction(stringResource(Res.string.compose_player_chapters), onClick = {
+                showVideoSettingsModal = false; openChaptersPanel()
+            }))
+            if (isSeries && playerSettingsUiState.introSubmitEnabled && playerSettingsUiState.introDbApiKey.isNotBlank()) {
+                add(PlayerSettingsQuickAction(stringResource(Res.string.submit_intro_action), onClick = {
+                    showVideoSettingsModal = false; showSubmitIntroModal = true
+                }))
+            }
+            add(PlayerSettingsQuickAction(stringResource(Res.string.cd_stream_info), onClick = {
+                showVideoSettingsModal = false; openStreamInfo()
+            }))
+        },
         onVideoSettingsChanged = {
             playerController?.configureIosVideoOutput(PlayerSettingsRepository.uiState.value)
         },

@@ -40,13 +40,13 @@ import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.i18n.localizedEpisodeTitle
 import com.nuvio.app.core.ui.AppIconResource
-import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.accentBrush
 import com.nuvio.app.core.ui.appIconPainter
@@ -256,7 +255,7 @@ internal fun FoldControls(
                 background = MaterialTheme.themePalette.accentBrush(),
             ) {
                 if (playbackSnapshot.isLoading) {
-                    NuvioLoadingIndicator(color = Color.White, modifier = Modifier.size(NuvioTokens.Icon.xxl))
+                    Spacer(modifier = Modifier.size(NuvioTokens.Icon.xxl))
                 } else {
                     Icon(
                         painter = appIconPainter(

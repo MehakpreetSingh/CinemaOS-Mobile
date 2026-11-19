@@ -66,6 +66,7 @@ internal fun OpeningOverlay(
     modifier: Modifier = Modifier,
     message: String? = null,
     progress: Float? = null,
+    showLoadingIndicator: Boolean = true,
 ) {
     val contentAlpha by animateFloatAsState(
         targetValue = 1f,
@@ -201,7 +202,7 @@ internal fun OpeningOverlay(
                                     scaleY = contentScale
                                 },
                         )
-                    } else {
+                    } else if (showLoadingIndicator) {
                         NuvioLoadingIndicator(
                             modifier = Modifier.size(54.dp),
                         )

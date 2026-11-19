@@ -58,6 +58,7 @@ internal fun PlayerScreenModalHosts(
     onSubtitleModalDismissed: () -> Unit,
     showVideoSettingsModal: Boolean,
     playerSettings: PlayerSettingsUiState,
+    settingsQuickActions: List<PlayerSettingsQuickAction>,
     onVideoSettingsChanged: () -> Unit,
     onVideoSettingsModalDismissed: () -> Unit,
     showSourcesPanel: Boolean,
@@ -182,6 +183,7 @@ internal fun PlayerScreenModalHosts(
     PlayerSettingsModal(
         visible = showVideoSettingsModal,
         settings = playerSettings,
+        quickActions = settingsQuickActions,
         onSettingsChanged = onVideoSettingsChanged,
         onDismiss = onVideoSettingsModalDismissed,
         onDownloadPlayingSource = sourceStreamsState.groups.flatMap { it.streams }.let { streams ->

@@ -93,6 +93,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
             modifier = Modifier.fillMaxSize(),
             message = openingLoadingMessage,
             progress = p2pInitialLoadingProgress,
+            showLoadingIndicator = showOpeningOverlay,
         )
     }
 
