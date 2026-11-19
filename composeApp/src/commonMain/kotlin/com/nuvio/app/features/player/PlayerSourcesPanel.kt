@@ -77,16 +77,15 @@ fun PlayerSourcesPanel(
         }
     }
 
-    PlayerSidePanel(
+    PlayerOverlayScaffold(
         visible = visible,
         onDismiss = onDismiss,
-        width = 720.dp,
         modifier = modifier,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(horizontal = 44.dp, vertical = 28.dp),
         ) {
             PlayerPanelHeader(
                 title = stringResource(Res.string.compose_player_panel_sources),

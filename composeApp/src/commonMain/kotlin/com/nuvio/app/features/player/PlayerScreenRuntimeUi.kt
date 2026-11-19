@@ -463,13 +463,9 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
                 refreshTracks()
                 showAudioModal = true
             },
-            onVideoSettingsClick = if (isIos) {
-                {
-                    showVideoSettingsModal = true
-                    controlsVisible = true
-                }
-            } else {
-                null
+            onVideoSettingsClick = {
+                showVideoSettingsModal = true
+                controlsVisible = true
             },
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
             onQualityClick = if (activeVideoId != null) { { openQualityPanel() } } else null,

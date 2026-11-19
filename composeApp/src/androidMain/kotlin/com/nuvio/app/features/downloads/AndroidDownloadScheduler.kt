@@ -124,6 +124,7 @@ internal class AndroidDownloadScheduler(val context: Context) {
             lock(fileName).withLock {
                 if (store.get(fileName) == null) {
                     File(directory, "$fileName.part").delete()
+                    AdaptiveStreamDownloads.remove(File(directory, fileName))
                     DownloadSubtitleStorage(File(directory, fileName).toURI().toString()).remove()
                 }
             }
@@ -155,7 +156,18 @@ internal class AndroidDownloadScheduler(val context: Context) {
             currentCoroutineContext().ensureActive()
             if (!isActive(transfer)) return@withLock false
             var lastProgressAt = 0L
-            val partial = if (destination.isFile) destination else transferAndroidDownload(
+            val adaptiveKind = AdaptiveStreamDownloads.detect(transfer.item.sourceUrl, transfer.item.sourceHeaders, transfer.item.sourceStreamType)
+            val reportProgress: (Long, Long?) -> Unit = { bytes, total ->
+                val now = SystemClock.elapsedRealtime()
+                if (now - lastProgressAt >= 1_000L || bytes == total) {
+                    lastProgressAt = now
+                    updateActive(transfer) { it.copy(item = it.item.copy(downloadedBytes = bytes, totalBytes = total)) }?.let(onProgress)
+                }
+            }
+            val partial = if (destination.isFile) destination else if (adaptiveKind != null) {
+                AdaptiveStreamDownloads.download(context, transfer.item.sourceUrl, transfer.item.sourceHeaders,
+                    adaptiveKind, destination, reportProgress)
+            } else transferAndroidDownload(
                 item = transfer.item,
                 directory = directory,
                 validator = transfer.validator,
@@ -178,7 +190,7 @@ internal class AndroidDownloadScheduler(val context: Context) {
                 if (partial != destination && !partial.renameTo(destination)) {
                     throw IOException("Could not finalize the downloaded file")
                 }
-                val bytes = destination.length()
+                val bytes = if (adaptiveKind != null) AdaptiveStreamDownloads.bytes(context, destination) else destination.length()
                 current.copy(item = current.item.copy(
                     status = DownloadStatus.Completed,
                     localFileUri = destination.toURI().toString(),

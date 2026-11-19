@@ -67,6 +67,7 @@ fun pauseDownloadsForAppBackground() {
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual object DownloadsPlatformDownloader {
+    actual val supportsAdaptiveDownloads: Boolean = false
     actual fun start(
         request: DownloadPlatformRequest,
         onProgress: (downloadedBytes: Long, totalBytes: Long?) -> Unit,

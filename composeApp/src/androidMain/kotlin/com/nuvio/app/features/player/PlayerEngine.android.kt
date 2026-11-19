@@ -143,7 +143,8 @@ actual fun PlatformPlayerSurface(
         useYoutubeChunkedPlayback,
         initialPositionRequestKey.orEmpty(),
     )
-    val requestedEngine = playbackEngine ?: playerSettings.androidPlaybackEngine
+    val requestedEngine = if (com.nuvio.app.features.downloads.AdaptiveStreamDownloads.isMarker(sourceUrl)) AndroidPlaybackEngine.ExoPlayer
+        else playbackEngine ?: playerSettings.androidPlaybackEngine
     val activeEngine by remember(playerSourceKey, requestedEngine) {
         mutableStateOf(requestedEngine.initialAndroidEngine())
     }
@@ -246,8 +247,8 @@ private fun ExoPlayerSurface(
     val sanitizedSourceResponseHeaders = remember(sourceResponseHeaders) {
         sanitizePlaybackResponseHeaders(sourceResponseHeaders)
     }
-    val normalizedStreamType = remember(streamType) {
-        normalizeStreamType(streamType)
+    val normalizedStreamType = remember(streamType, sourceUrl) {
+        com.nuvio.app.features.downloads.AdaptiveStreamDownloads.markerType(sourceUrl) ?: normalizeStreamType(streamType)
     }
     val useLibass = playerSettings.useLibass
     val libassRenderMode = playerSettings.libassRenderMode
@@ -301,6 +302,7 @@ private fun ExoPlayerSurface(
                 streamType = normalizedStreamType,
             ).buildUpon()
                 .setMediaId(sourceUrl)
+                .setStreamKeys(com.nuvio.app.features.downloads.AdaptiveStreamDownloads.streamKeys(sourceUrl))
                 .apply {
                     val subtitleConfigs = startupSubtitleConfigurations(externalSubtitles)
                     if (subtitleConfigs.isNotEmpty()) {
@@ -337,6 +339,10 @@ private fun ExoPlayerSurface(
         playerSettings.vodCacheSizeMode,
         playerSettings.vodCacheSizeMb,
     ) {
+        com.nuvio.app.features.downloads.AdaptiveStreamDownloads.playbackFactory(context, sourceUrl)?.let { offline ->
+            return@remember SubtitleRoutingDataSourceFactory(media = offline,
+                subtitles = subtitleDataSourceFactory(context, externalSubtitles))
+        }
         val loopbackSource = isLoopbackPlaybackSource(sourceUrl)
         val upstream = PlatformPlaybackDataSourceFactory.create(
             context = context,

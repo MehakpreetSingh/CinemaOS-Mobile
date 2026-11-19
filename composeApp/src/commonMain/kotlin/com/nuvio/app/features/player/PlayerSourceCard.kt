@@ -33,6 +33,11 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.nuvio
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.brand_dolby_mark
+import nuvio.composeapp.generated.resources.brand_dolby_vision
+import nuvio.composeapp.generated.resources.brand_hdr10plus
+import org.jetbrains.compose.resources.painterResource
 import com.nuvio.app.features.streams.StreamItem
 
 private enum class ChipTone { Quality, Accent, Neutral }
@@ -97,13 +102,18 @@ private fun LabelBadge(text: String, tone: ChipTone = ChipTone.Neutral) {
 @Composable
 private fun DolbyBadge(word: String) {
     MediaBadge(ChipTone.Accent) { color ->
-        Icon(
-            imageVector = StreamInfoIcons.DolbyMark,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(15.dp),
-        )
-        BadgeText(word, color, fontSize = 9.5.sp, weight = FontWeight.Black, tracking = 1.sp)
+        if (word == "VISION") {
+            Icon(painterResource(Res.drawable.brand_dolby_vision), contentDescription = "Dolby Vision", tint = color,
+                modifier = Modifier.width(88.dp).height(14.dp))
+        } else {
+            Icon(
+                painter = painterResource(Res.drawable.brand_dolby_mark),
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.width(22.dp).height(15.dp),
+            )
+            BadgeText(word, color, fontSize = 9.5.sp, weight = FontWeight.Black, tracking = 1.sp)
+        }
     }
 }
 
@@ -111,14 +121,8 @@ private fun DolbyBadge(word: String) {
 @Composable
 private fun Hdr10PlusBadge() {
     MediaBadge(ChipTone.Quality) { color ->
-        BadgeText("HDR10", color, weight = FontWeight.Black, tracking = 0.3.sp)
-        Text(
-            text = "+",
-            color = color,
-            fontSize = 14.sp,
-            lineHeight = 14.sp,
-            fontWeight = FontWeight.Black,
-        )
+        Icon(painterResource(Res.drawable.brand_hdr10plus), contentDescription = "HDR10+", tint = color,
+            modifier = Modifier.width(48.dp).height(17.dp))
     }
 }
 

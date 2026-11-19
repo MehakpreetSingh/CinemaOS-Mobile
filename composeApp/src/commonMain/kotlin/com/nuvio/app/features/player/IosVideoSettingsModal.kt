@@ -53,7 +53,7 @@ internal fun IosVideoSettingsModal(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    PlayerSidePanel(
+    PlayerOverlayScaffold(
         visible = visible,
         onDismiss = onDismiss,
         modifier = modifier,
@@ -61,7 +61,7 @@ internal fun IosVideoSettingsModal(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(horizontal = 44.dp, vertical = 28.dp),
         ) {
             PlayerPanelHeader(
                 title = stringResource(Res.string.player_video_settings_title),

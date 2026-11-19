@@ -132,7 +132,7 @@ object DownloadsRepository {
             ?.takeIf { it.isNotBlank() }
             ?: return DownloadEnqueueResult.MissingUrl
 
-        if (!sourceUrl.isSupportedDownloadUrl()) {
+        if (!sourceUrl.isSupportedDownloadUrl(stream.behaviorHints.streamType)) {
             return DownloadEnqueueResult.UnsupportedFormat
         }
 
@@ -184,6 +184,7 @@ object DownloadsRepository {
             providerName = stream.addonName,
             providerAddonId = stream.addonId,
             sourceUrl = sourceUrl,
+            sourceStreamType = stream.behaviorHints.streamType,
             sourceHeaders = sanitizeRequestHeaders(stream.behaviorHints.proxyHeaders?.request),
             sourceResponseHeaders = sanitizeResponseHeaders(stream.behaviorHints.proxyHeaders?.response),
             subtitleRequests = addonSubtitleRequests(
@@ -577,11 +578,12 @@ private fun String.fileExtensionFromUrl(): String {
     }
 }
 
-private fun String.isSupportedDownloadUrl(): Boolean {
+private fun String.isSupportedDownloadUrl(streamType: String? = null): Boolean {
     val normalized = trim().lowercase()
     if (normalized.startsWith("magnet:")) return false
-    if (normalized.endsWith(".m3u8") || normalized.contains(".m3u8?")) return false
-    if (normalized.endsWith(".mpd") || normalized.contains(".mpd?")) return false
+    val adaptive = normalized.substringBefore('?').substringBefore('#').let { it.endsWith(".m3u8") || it.endsWith(".mpd") } ||
+        streamType?.lowercase() in setOf("hls", "dash", "application/x-mpegurl", "application/vnd.apple.mpegurl", "application/dash+xml")
+    if (adaptive && !DownloadsPlatformDownloader.supportsAdaptiveDownloads) return false
     if (normalized.endsWith(".torrent") || normalized.contains(".torrent?")) return false
     return normalized.startsWith("http://") || normalized.startsWith("https://")
 }

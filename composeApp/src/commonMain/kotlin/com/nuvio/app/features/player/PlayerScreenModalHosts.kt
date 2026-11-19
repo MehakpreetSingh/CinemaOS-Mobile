@@ -179,11 +179,16 @@ internal fun PlayerScreenModalHosts(
         onDismiss = onSubtitleModalDismissed,
     )
 
-    IosVideoSettingsModal(
+    PlayerSettingsModal(
         visible = showVideoSettingsModal,
         settings = playerSettings,
         onSettingsChanged = onVideoSettingsChanged,
         onDismiss = onVideoSettingsModalDismissed,
+        onDownloadPlayingSource = sourceStreamsState.groups.flatMap { it.streams }.let { streams ->
+            streams.getOrNull(streams.currentPlayerStreamIndex(currentStream))?.let { playing ->
+                { onDownloadSourceStream(playing) }
+            }
+        },
     )
 
     PlayerQualityPanel(
