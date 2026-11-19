@@ -57,6 +57,12 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
     val isInPip = rememberIsInPictureInPicture()
     val displayedPositionMs = scrubbingPositionMs ?: playbackSnapshot.positionMs
     val isEpisode = activeSeasonNumber != null && activeEpisodeNumber != null
+    val introKey = "${activeVideoId ?: parentMetaId ?: title}:$activeSeasonNumber:$activeEpisodeNumber"
+    val (introVisible, introComplete) = rememberPlaybackTitleIntro(
+        contentKey = introKey,
+        ready = playbackSnapshot.isPlaying && !playbackSnapshot.isLoading && !controlsVisible &&
+            !isPanelOpen && !isInPip && errorMessage == null,
+    )
     val currentGestureFeedback = liveGestureFeedback ?: gestureFeedback
     val isP2pPlaybackActive = activeTorrentInfoHash != null
     val p2pConnecting = p2pStreamingState as? P2pStreamingState.Connecting
@@ -222,7 +228,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
         val resolvedAutoEngine = resolvedAutoEngineState.value
 
         if (!playerSurfaceSourceUrl.isNullOrBlank()) {
-            key(playbackKey) {
+            key(playbackKey, sourceRetryGeneration) {
                 val active = remember { mutableStateOf(true) }
                 DisposableEffect(Unit) {
                     onDispose { active.value = false }
@@ -305,6 +311,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
         }
 
         RenderPlayerControls(
+            introComplete = introComplete,
             displayedPositionMs = displayedPositionMs,
             isEpisode = isEpisode,
             folded = fold != null,
@@ -312,6 +319,12 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi(
             modifier = panelModifier,
         )
         Box(modifier = videoModifier) {
+            PlaybackTitleOverlay(
+                title = title,
+                episode = if (isEpisode) "S$activeSeasonNumber E$activeEpisodeNumber${activeEpisodeTitle?.let { " · $it" }.orEmpty()}" else null,
+                visible = introVisible,
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 32.dp, top = 24.dp),
+            )
             // One owner for playback loading, independent of visible, hidden, locked or folded controls.
             val hasPlaybackSource = activeSourceUrl.isNotBlank() || activeTorrentInfoHash != null
             val awaitingInitialPlayback = !initialLoadCompleted && hasPlaybackSource
@@ -371,6 +384,7 @@ private fun PlayerScreenRuntime.currentInitialPositionRequestKey(): String? {
 
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerControls(
+    introComplete: Boolean,
     displayedPositionMs: Long,
     isEpisode: Boolean,
     folded: Boolean,
@@ -521,7 +535,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(
             },
             onStreamInfoClick = { openStreamInfo() },
             parentalWarnings = parentalWarnings,
-            showParentalGuide = showParentalGuide,
+            showParentalGuide = showParentalGuide && introComplete,
             onParentalGuideAnimationComplete = { showParentalGuide = false },
             onScrubChange = { positionMs ->
                 if (!isLive) {

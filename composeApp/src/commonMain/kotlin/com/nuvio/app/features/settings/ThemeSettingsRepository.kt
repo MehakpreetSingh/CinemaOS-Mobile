@@ -43,6 +43,9 @@ object ThemeSettingsRepository {
     private val _navBarGlowEnabled = MutableStateFlow(true)
     val navBarGlowEnabled: StateFlow<Boolean> = _navBarGlowEnabled.asStateFlow()
 
+    private val _hiddenNavigationPages = MutableStateFlow<Set<String>>(emptySet())
+    val hiddenNavigationPages: StateFlow<Set<String>> = _hiddenNavigationPages.asStateFlow()
+
     private var hasLoaded = false
     private var observesMembership = false
 
@@ -68,6 +71,7 @@ object ThemeSettingsRepository {
         NativeTabBridge.publishLiquidGlassEnabled(false)
         _selectedAppLanguage.value = AppLanguage.DEVICE
         _navBarGlowEnabled.value = true
+        _hiddenNavigationPages.value = emptySet()
         _navBarStyle.value = NavBarStyle.ADAPTIVE
     }
 
@@ -93,6 +97,7 @@ object ThemeSettingsRepository {
         val appLanguage = AppLanguage.fromCode(ThemeSettingsStorage.loadSelectedAppLanguage())
         ThemeSettingsStorage.applySelectedAppLanguage(appLanguage.code)
         _selectedAppLanguage.value = appLanguage
+        _hiddenNavigationPages.value = parseHiddenNavigationPages(ThemeSettingsStorage.loadHiddenNavigationPages())
         _navBarGlowEnabled.value = ThemeSettingsStorage.loadNavBarGlowEnabled() ?: true
         _navBarStyle.value = NavBarStyle.fromKey(ThemeSettingsStorage.loadNavBarStyle())
     }
@@ -155,6 +160,14 @@ object ThemeSettingsRepository {
         ThemeSettingsStorage.saveNavBarGlowEnabled(enabled)
     }
 
+    fun setNavigationPageVisible(page: String, visible: Boolean) {
+        ensureLoaded()
+        if (page !in optionalNavigationPages) return
+        val hidden = if (visible) _hiddenNavigationPages.value - page else _hiddenNavigationPages.value + page
+        ThemeSettingsStorage.saveHiddenNavigationPages(hidden.sorted().joinToString(","))
+        _hiddenNavigationPages.value = hidden
+    }
+
     private fun observeMembership() {
         if (observesMembership) return
         observesMembership = true
@@ -179,3 +192,8 @@ object ThemeSettingsRepository {
         )
     }
 }
+
+internal val optionalNavigationPages = setOf("Search", "Library", "Anime", "Sports")
+
+internal fun parseHiddenNavigationPages(value: String?): Set<String> =
+    value.orEmpty().split(',').filter { it in optionalNavigationPages }.toSet()

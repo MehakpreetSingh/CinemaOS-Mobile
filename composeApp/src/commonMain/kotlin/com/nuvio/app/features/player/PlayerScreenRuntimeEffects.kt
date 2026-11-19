@@ -114,7 +114,7 @@ internal fun PlayerScreenRuntime.BindPlayerRuntimeEffects() {
         }
     }
 
-    LaunchedEffect(activePlaybackKey, activeSourceUrl, activeSourceAudioUrl, activeSourceHeaders, activeSourceResponseHeaders) {
+    LaunchedEffect(activePlaybackKey, sourceRetryGeneration, activeSourceUrl, activeSourceAudioUrl, activeSourceHeaders, activeSourceResponseHeaders) {
         errorMessage = null
         playerController = null
         playerControllerSourceUrl = null
@@ -522,7 +522,6 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
             isScrubbingTimeline ||
             !playbackSnapshot.isPlaying ||
             playbackSnapshot.isLoading ||
-            showParentalGuide ||
             errorMessage != null
         ) {
             return@LaunchedEffect

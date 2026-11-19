@@ -106,10 +106,10 @@ private val icons: Map<DockIconKind, MorphIcon> by lazy {
             active = "M 3.5 2.5 L 8.8 5.8 C 11 5.3 13 5.3 15.2 5.8 L 20.5 2.5 L 21 12 C 21 17.5 17.3 21.5 12 21.5 C 6.7 21.5 3 17.5 3 12 Z " +
                 circle(9f, 12f, 1.3f) + " " + circle(15f, 12f, 1.3f),
         ),
-        // Trophy: cup with two handles, stem and base (same command sequence in both states).
+        // Live broadcast screen. Use only the M/L/C/Z commands supported by the morph parser.
         DockIconKind.Sports to MorphIcon(
-            inactive = "M 5 6 L 19 6 Q 21 6 21 8 L 21 18 Q 21 20 19 20 L 5 20 Q 3 20 3 18 L 3 8 Q 3 6 5 6 Z M 8 2 L 12 6 L 16 2 M 10 10 L 16 13 L 10 16 Z",
-            active = "M 4.5 5.5 L 19.5 5.5 Q 21.5 5.5 21.5 7.5 L 21.5 18.5 Q 21.5 20.5 19.5 20.5 L 4.5 20.5 Q 2.5 20.5 2.5 18.5 L 2.5 7.5 Q 2.5 5.5 4.5 5.5 Z M 8 1.5 L 12 5.5 L 16 1.5 M 9.5 9.5 L 16.5 13 L 9.5 16.5 Z",
+            inactive = "M 4 5 L 20 5 C 21.1 5 22 5.9 22 7 L 22 17 C 22 18.1 21.1 19 20 19 L 4 19 C 2.9 19 2 18.1 2 17 L 2 7 C 2 5.9 2.9 5 4 5 Z M 8 22 L 16 22 M 10 19 L 10 22 M 14 19 L 14 22 M 12 8 C 15.3 8 18 10.7 18 14 M 12 11 C 13.7 11 15 12.3 15 14 M 12 14 L 12 14.05",
+            active = "M 4 5 L 20 5 C 21.1 5 22 5.9 22 7 L 22 17 C 22 18.1 21.1 19 20 19 L 4 19 C 2.9 19 2 18.1 2 17 L 2 7 C 2 5.9 2.9 5 4 5 Z M 8 22 L 16 22 M 10 19 L 10 22 M 14 19 L 14 22 M 12 8 C 15.3 8 18 10.7 18 14 M 12 11 C 13.7 11 15 12.3 15 14 M 12 14 L 12 14.05",
         ),
         DockIconKind.Profile to MorphIcon(
             inactive = circle(12f, 8f, 4f) +

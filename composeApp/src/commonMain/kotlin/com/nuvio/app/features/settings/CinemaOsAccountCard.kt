@@ -128,10 +128,14 @@ internal fun CinemaOsAccountCard() {
         val current = session
         if (current != null) {
             Text(
-                text = "Signed in as ${current.label}",
+                text = "Signed in as ${current.displayName ?: current.label}",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            if (!current.displayName.isNullOrBlank() && current.displayName != current.label) {
+                Text(text = current.label, style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = if (isSyncing) {

@@ -159,6 +159,31 @@ class PlayerSourceFallbackTest {
         assertFalse(runtime.tryFallbackToNextSourceAfterError("failed"))
     }
 
+    @Test
+    fun retryingTheFailedSourceRecreatesTheEngineAndKeepsResumePosition() {
+        val runtime = runtime(initialPositionMs = 120_000L)
+        runtime.errorMessage = "Playback failed"
+        runtime.showSourcesPanel = true
+
+        runtime.switchToSource(StreamItem(name = "Retry", url = failedUrl, addonName = "Test", addonId = "test"), saveForReuse = false)
+
+        assertEquals(1, runtime.sourceRetryGeneration)
+        assertEquals(120_000L, runtime.activeInitialPositionMs)
+        assertEquals("Retry", runtime.activeStream?.name)
+        assertFalse(runtime.showSourcesPanel)
+    }
+
+    @Test
+    fun selectingTheHealthyCurrentSourceClosesThePanelWithoutRestarting() {
+        val runtime = runtime()
+        runtime.showSourcesPanel = true
+
+        runtime.switchToSource(StreamItem(name = "Same", url = failedUrl, addonName = "Test", addonId = "test"), saveForReuse = false)
+
+        assertEquals(0, runtime.sourceRetryGeneration)
+        assertFalse(runtime.showSourcesPanel)
+    }
+
     private fun settings() = PlayerSettingsUiState(
         streamAutoPlayMode = StreamAutoPlayMode.FIRST_STREAM,
         streamAutoPlayFallbackOnFailure = true,

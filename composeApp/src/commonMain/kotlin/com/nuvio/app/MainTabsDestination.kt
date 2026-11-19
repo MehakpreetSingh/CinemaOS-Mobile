@@ -73,7 +73,8 @@ internal fun MainTabsDestination(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val isTabletLayout = useTabletFloatingTabBar || maxWidth >= 768.dp
         val tabActions = remember(actions, isTabletLayout) { actions(isTabletLayout) }
-        val useNativeBottomTabs = if (useNativeNavigation) {
+        val hiddenPages by ThemeSettingsRepository.hiddenNavigationPages.collectAsStateWithLifecycle()
+        val useNativeBottomTabs = hiddenPages.isEmpty() && if (useNativeNavigation) {
             useNativeTabBar
         } else {
             liquidGlassNativeTabBarSupported && liquidGlassNativeTabBarEnabled && initialHomeReady
@@ -84,6 +85,8 @@ internal fun MainTabsDestination(
         val savedNavBarStyle by remember { ThemeSettingsRepository.navBarStyle }.collectAsStateWithLifecycle()
         val navBarStyleSetting = savedNavBarStyle
         val navBarGlowEnabled by ThemeSettingsRepository.navBarGlowEnabled.collectAsStateWithLifecycle()
+        val navigationOrder = listOf(AppScreenTab.Home, AppScreenTab.Search, AppScreenTab.Library,
+            AppScreenTab.Anime, AppScreenTab.Sports, AppScreenTab.Settings)
         val floatingNavigationItems = listOf(
             FloatingNavigationItem(
                 selected = selectedTab == AppScreenTab.Home,
@@ -121,7 +124,7 @@ internal fun MainTabsDestination(
                 morph = DockIconKind.Profile,
                 label = stringResource(Res.string.compose_nav_profile),
             ),
-        )
+        ).filterIndexed { index, _ -> navigationOrder[index].name !in hiddenPages }
 
         Scaffold(
             modifier = Modifier

@@ -29,6 +29,18 @@ class ThemeSettingsStorageTest {
     }
 
     @Test
+    fun hiddenPagesSurviveReloadAndProfileSync() {
+        ThemeSettingsStorage.saveHiddenNavigationPages("Anime,Sports")
+        val payload = ThemeSettingsStorage.exportToSyncPayload()
+        ThemeSettingsStorage.initialize(RuntimeEnvironment.getApplication())
+        assertEquals(setOf("Anime", "Sports"), parseHiddenNavigationPages(ThemeSettingsStorage.loadHiddenNavigationPages()))
+        ThemeSettingsStorage.saveHiddenNavigationPages("")
+        ThemeSettingsStorage.replaceFromSyncPayload(payload)
+        assertEquals(setOf("Anime", "Sports"), parseHiddenNavigationPages(ThemeSettingsStorage.loadHiddenNavigationPages()))
+        assertEquals(emptySet<String>(), parseHiddenNavigationPages("Home,Settings,unknown"))
+    }
+
+    @Test
     fun glowPreferenceSurvivesReloadAndSync() {
         ThemeSettingsStorage.saveNavBarGlowEnabled(false)
         ThemeSettingsStorage.initialize(RuntimeEnvironment.getApplication())

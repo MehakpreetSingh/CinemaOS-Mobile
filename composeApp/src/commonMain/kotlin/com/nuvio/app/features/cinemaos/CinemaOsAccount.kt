@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 data class CinemaOsAccountSession(
     val label: String,
     val uid: String,
+    val displayName: String? = null,
 )
 
 data class CinemaOsDeviceCode(

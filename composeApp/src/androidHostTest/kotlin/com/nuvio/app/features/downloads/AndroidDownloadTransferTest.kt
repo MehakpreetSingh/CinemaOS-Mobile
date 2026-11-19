@@ -42,6 +42,22 @@ class AndroidDownloadTransferTest {
             assertEquals("\"version-1\"", request.getHeader("If-Range"))
             assertEquals("identity", request.getHeader("Accept-Encoding"))
             assertEquals("Bearer test", request.getHeader("Authorization"))
+            assertEquals(com.nuvio.app.features.player.PlayerPlaybackNetworking.DEFAULT_USER_AGENT, request.getHeader("User-Agent"))
+        }
+    }
+
+    @Test
+    fun providerUserAgentIsPreserved(): Unit = runBlocking {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setBody("video"))
+            val item = downloadItem(server.url("/video").toString()).copy(
+                sourceHeaders = mapOf("user-agent" to "ProviderPlayer/1.0", "Cookie" to "session=test"),
+            )
+            transferAndroidDownload(item, temporary.newFolder(), null,
+                onHeaders = { _, _ -> }, onProgress = { _, _ -> })
+            val request = server.takeRequest()
+            assertEquals("ProviderPlayer/1.0", request.getHeader("User-Agent"))
+            assertEquals("session=test", request.getHeader("Cookie"))
         }
     }
 

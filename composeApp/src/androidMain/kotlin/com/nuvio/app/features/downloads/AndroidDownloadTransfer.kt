@@ -48,6 +48,9 @@ internal suspend fun transferAndroidDownload(
                         if (!key.equals("Range", true) && !key.equals("If-Range", true) &&
                             !key.equals("Accept-Encoding", true)) header(key, value)
                     }
+                    if (item.sourceHeaders.keys.none { it.equals("User-Agent", true) }) {
+                        header("User-Agent", com.nuvio.app.features.player.PlayerPlaybackNetworking.DEFAULT_USER_AGENT)
+                    }
                     header("Accept-Encoding", "identity")
                     if (offset > 0L) {
                         header("Range", "bytes=$offset-")

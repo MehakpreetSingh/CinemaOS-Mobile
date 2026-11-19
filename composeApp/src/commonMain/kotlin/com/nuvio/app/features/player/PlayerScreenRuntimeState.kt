@@ -117,6 +117,7 @@ internal class PlayerScreenRuntime(
     var controlsVisible by mutableStateOf(false)
     var showRemainingTime by mutableStateOf(false)
     var playerControlsLocked by mutableStateOf(false)
+    var sourceRetryGeneration by mutableStateOf(0)
     var activeSourceUrl by mutableStateOf(sourceUrl)
     var activeSourceAudioUrl by mutableStateOf(sourceAudioUrl)
     var activeSourceHeaders by mutableStateOf(sanitizePlaybackHeaders(sourceHeaders))

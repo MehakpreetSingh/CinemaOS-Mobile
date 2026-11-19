@@ -12,6 +12,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -41,6 +43,7 @@ internal fun NavigationBarSettingsSheet(
     onGlowChanged: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val hiddenPages by ThemeSettingsRepository.hiddenNavigationPages.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val dismiss: () -> Unit = {
@@ -89,6 +92,21 @@ internal fun NavigationBarSettingsSheet(
                             onCheckedChange = onGlowChanged,
                         )
                     }
+                }
+            }
+            item {
+                NuvioBottomSheetDivider()
+                Text("Pages in navigation", style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
+                listOf(
+                    "Search" to stringResource(Res.string.compose_nav_search),
+                    "Library" to stringResource(Res.string.compose_nav_library),
+                    "Anime" to stringResource(Res.string.compose_nav_anime),
+                    "Sports" to stringResource(Res.string.compose_nav_sports),
+                ).forEach { (page, title) ->
+                    SettingsSwitchRow(title = title, description = "Show in the navigation bar",
+                        checked = page !in hiddenPages, isTablet = isTablet,
+                        onCheckedChange = { ThemeSettingsRepository.setNavigationPageVisible(page, it) })
                 }
             }
             item {

@@ -22,7 +22,9 @@ actual object ThemeSettingsStorage {
     private const val selectedAppLanguageKey = "selected_app_language"
     private const val NAV_BAR_STYLE_KEY = "nav_bar_style"
     private const val navBarGlowEnabledKey = "nav_bar_glow_enabled"
+    private const val hiddenNavigationPagesKey = "hidden_navigation_pages"
     private val profileScopedSyncKeys = listOf(
+        hiddenNavigationPagesKey,
         selectedThemeKey,
         customThemeColorsKey,
         amoledEnabledKey,
@@ -132,7 +134,15 @@ actual object ThemeSettingsStorage {
             ?.apply()
     }
 
+    actual fun loadHiddenNavigationPages(): String? =
+        preferences?.getString(ProfileScopedKey.of(hiddenNavigationPagesKey), null)
+
+    actual fun saveHiddenNavigationPages(pages: String) {
+        preferences?.edit()?.putString(ProfileScopedKey.of(hiddenNavigationPagesKey), pages)?.apply()
+    }
+
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
+        loadHiddenNavigationPages()?.let { put(hiddenNavigationPagesKey, encodeSyncString(it)) }
         loadSelectedTheme()?.let { put(selectedThemeKey, encodeSyncString(it)) }
         loadCustomThemeColors()?.let { put(customThemeColorsKey, encodeSyncString(it)) }
         loadNavBarGlowEnabled()?.let { put(navBarGlowEnabledKey, encodeSyncBoolean(it)) }
@@ -146,6 +156,7 @@ actual object ThemeSettingsStorage {
             profileScopedSyncKeys.forEach { remove(ProfileScopedKey.of(it)) }
         }?.apply()
 
+        payload.decodeSyncString(hiddenNavigationPagesKey)?.let(::saveHiddenNavigationPages)
         payload.decodeSyncString(selectedThemeKey)?.let(::saveSelectedTheme)
         payload.decodeSyncString(customThemeColorsKey)?.let(::saveCustomThemeColors)
         payload.decodeSyncBoolean(navBarGlowEnabledKey)?.let(::saveNavBarGlowEnabled)

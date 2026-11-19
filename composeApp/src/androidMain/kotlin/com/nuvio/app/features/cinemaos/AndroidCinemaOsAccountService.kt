@@ -84,7 +84,7 @@ class AndroidCinemaOsAccountService(context: Context) : CinemaOsAccountService {
     private val lastPushAt = ConcurrentHashMap<String, Long>()
     private val pendingPush = ConcurrentHashMap<String, WatchProgressEntry>()
 
-    private fun CinemaOsStoredSession.toPublic() = CinemaOsAccountSession(label = label, uid = uid)
+    private fun CinemaOsStoredSession.toPublic() = CinemaOsAccountSession(label = label, uid = uid, displayName = displayName)
     private val isSignedIn: Boolean get() = stored != null
 
     /** Pulls when a user signs in (and on app start if already signed in); then every 10 minutes. */
@@ -166,6 +166,7 @@ class AndroidCinemaOsAccountService(context: Context) : CinemaOsAccountService {
             ?: throw CinemaOsAuthException("NO_UID")
         val session = CinemaOsStoredSession(
             label = label,
+            displayName = lookup?.optString("displayName")?.takeIf(String::isNotBlank),
             uid = uid,
             refreshToken = res.getString("refreshToken"),
             idToken = idToken,

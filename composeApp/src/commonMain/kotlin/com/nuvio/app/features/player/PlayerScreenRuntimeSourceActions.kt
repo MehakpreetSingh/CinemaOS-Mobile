@@ -334,10 +334,19 @@ internal fun PlayerScreenRuntime.switchToSource(
     val url = stream.playableDirectUrl ?: return
     val sourceIdentityKey = stream.playerSourceIdentityKey()
     if (url == activeSourceUrl) {
+        val sameHeaders = sanitizePlaybackHeaders(stream.behaviorHints.proxyHeaders?.request) == activeSourceHeaders &&
+            sanitizePlaybackResponseHeaders(stream.behaviorHints.proxyHeaders?.response) == activeSourceResponseHeaders
         activeSourceIdentityKey = sourceIdentityKey ?: activeSourceIdentityKey
-        return
+        if (errorMessage == null && sameHeaders && stream.streamType == activeStreamType) {
+            showSourcesPanel = false
+            showQualityPanel = false
+            return
+        }
+        // A failed source must get a fresh engine even when its URL did not change.
+        sourceRetryGeneration++
     }
-    val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
+    val currentPositionMs = playbackSnapshot.positionMs.takeIf { it > 0L }
+        ?: activeInitialPositionMs.coerceAtLeast(0L)
     flushWatchProgress()
     stopActiveP2pStream()
     val currentVideoId = activeVideoId
