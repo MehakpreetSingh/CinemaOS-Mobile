@@ -575,3 +575,8 @@ composeCompiler {
         reportsDestination = layout.buildDirectory.dir("compose_reports")
     }
 }
+
+// Preserve the failure cause in CI logs when a device-independent regression fails.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    testLogging.exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+}
