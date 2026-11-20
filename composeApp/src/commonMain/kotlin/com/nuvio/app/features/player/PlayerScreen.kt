@@ -51,6 +51,19 @@ fun PlayerScreen(
     sourceAutoSelected: Boolean = false,
     openSourcesOnStart: Boolean = false,
 ) {
+    // Live sports items save no watch progress, so record them for "Recently watched" at playback start.
+    androidx.compose.runtime.LaunchedEffect(parentMetaId, videoId) {
+        if (isLiveSportsContent(videoId, parentMetaId, parentMetaType, contentType, seasonNumber, episodeNumber)) {
+            com.nuvio.app.features.sports.SportsRecentRepository.record(
+                id = parentMetaId,
+                type = parentMetaType,
+                name = title,
+                poster = poster,
+                logo = logo,
+                nowMs = kotlin.time.Clock.System.now().toEpochMilliseconds(),
+            )
+        }
+    }
     PlayerScreenContent(
         PlayerScreenArgs(
             profileId = profileId,

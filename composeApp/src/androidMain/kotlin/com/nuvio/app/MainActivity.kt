@@ -117,6 +117,7 @@ open class MainActivity : AppCompatActivity() {
         MemberAssetStorage.initialize(applicationContext)
         DiscoverSelectionStorage.initialize(applicationContext)
         SearchHistoryStorage.initialize(applicationContext)
+        com.nuvio.app.features.sports.SportsRecentStorage.initialize(applicationContext)
         SeasonViewModeStorage.initialize(applicationContext)
         PosterCardStyleStorage.initialize(applicationContext)
         CustomPosterUrlStorage.initialize(applicationContext)

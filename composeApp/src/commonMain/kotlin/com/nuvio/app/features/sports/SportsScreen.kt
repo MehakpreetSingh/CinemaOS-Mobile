@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,6 +96,9 @@ import nuvio.composeapp.generated.resources.sports_live_badge
 import nuvio.composeapp.generated.resources.sports_live_tv_empty
 import nuvio.composeapp.generated.resources.sports_live_tv_search_placeholder
 import nuvio.composeapp.generated.resources.sports_retry
+import nuvio.composeapp.generated.resources.sports_recent_clear
+import nuvio.composeapp.generated.resources.sports_recent_remove
+import nuvio.composeapp.generated.resources.sports_recent_title
 import nuvio.composeapp.generated.resources.sports_row_live
 import nuvio.composeapp.generated.resources.sports_row_networks
 import nuvio.composeapp.generated.resources.sports_row_replays
@@ -180,6 +187,9 @@ fun SportsScreen(
     val availableCatalogs = remember(sportsAddon?.manifest) {
         sportsAddon?.manifest?.catalogs?.associateBy { it.id }
     }
+
+    LaunchedEffect(Unit) { SportsRecentRepository.ensureLoaded() }
+    val recentEntries by SportsRecentRepository.entries.collectAsStateWithLifecycle()
 
     var selectedFilterName by rememberSaveable { mutableStateOf(SportFilter.LiveTv.name) }
     val selectedFilter = remember(selectedFilterName) {
@@ -380,6 +390,15 @@ fun SportsScreen(
                         onSelected = { selectedFilterName = it.name },
                     )
                 }
+                if (recentEntries.isNotEmpty() && (isLiveTv || selectedFilter == SportFilter.All)) {
+                    item(key = "sports_recent") {
+                        SportsRecentSection(
+                            entries = recentEntries,
+                            sectionPadding = sectionPadding,
+                            onClick = onPosterClick,
+                        )
+                    }
+                }
                 if (isLiveTv) {
                     liveTvContent(
                         items = liveTvItems,
@@ -521,6 +540,57 @@ private fun SportsRowSection(
                 LiveBadge(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun SportsRecentSection(
+    entries: List<SportsRecentEntry>,
+    sectionPadding: androidx.compose.ui.unit.Dp,
+    onClick: ((MetaPreview) -> Unit)?,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = sectionPadding),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(Res.string.sports_recent_title),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+            )
+            TextButton(onClick = { SportsRecentRepository.clear() }) {
+                Text(text = stringResource(Res.string.sports_recent_clear))
+            }
+        }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = sectionPadding),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            items(entries, key = { "${it.type}:${it.id}" }) { entry ->
+                var menuOpen by remember { mutableStateOf(false) }
+                Box {
+                    HomePosterCard(
+                        item = entry.toMetaPreview(),
+                        showLandscapeOverlay = false,
+                        onClick = onClick?.let { click -> { click(entry.toMetaPreview()) } },
+                        onLongClick = { menuOpen = true },
+                    )
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.sports_recent_remove)) },
+                            onClick = {
+                                menuOpen = false
+                                SportsRecentRepository.remove(entry.id, entry.type)
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
